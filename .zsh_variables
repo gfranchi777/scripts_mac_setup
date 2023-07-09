@@ -1,0 +1,65 @@
+##############################
+# Variables
+##############################
+
+#Netscope Variables
+export SSL_CERT_FILE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
+export GIT_SSL_CAPATH='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
+export NODE_EXTRA_CA_CERTS='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
+export REQUESTS_CA_BUNDLE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
+export CURL_CA_BUNDLE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
+export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:$PATH"
+export CURL_CA_BUNDLE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem'
+export REQUESTS_CA_BUNDLE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem'
+export NODE_EXTRA_CA_CERTS='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem'
+export GIT_SSL_CAPATH='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem'
+export SSL_CERT_FILE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem'
+
+#Maven Variables
+export M2_HOME=/opt/homebrew/bin
+export MAVEN_OPTS="-Xms256m -Xmx512m"
+export PATH=${M2_HOME}/bin:${PATH}
+
+#Java Variables
+export JDK_HOME=/Library/Java/JavaVirtualMachines/jdk-20.jdk
+export JAVA_HOME=$(/usr/libexec/java_home)
+export PATH=${JDK_HOME}/bin:${PATH}
+
+#Vault Variables
+VAULT_ADDR_FM_DEV=https://vault.fm.nonprod.cloud.res.bngf.local
+VAULT_ADDR_FM_PRD=https://vault.fm.cloud.res.bngf.local
+
+VAULT_ADDR_ONPREM_PRD=https://vault-onprem-active.prd.bngf.local
+
+VAULT_ADDR_AWS_DEV=https://vault-aws-nonprod.res.bngf.local
+VAULT_ADDR_AWS_PRD=https://vault-aws.prd.bngf.local
+
+export VAULT_ADDR=${VAULT_ADDR_AWS_DEV}
+export VAULT_SKIP_VERIFY=true
+
+#Terraform Variables
+TF_WORKSPACE_DEV=dev
+TF_WORKSPACE_STG=stg
+TF_WORKSPACE_PRD=prd
+
+export TF_WORKSPACE=${TF_WORKSPACE_DEV}
+
+#AWS Vault Variables
+export AWS_CA_BUNDLE=${SSL_CERT_FILE}
+export AWS_VAULT_BACKEND=keychain
+
+#AWS Variables
+export AWS_REGION=ca-central-1
+#export AWS_REGION=eu-west-1
+
+#GIT Variables
+export GIT_KEYCHAIN=~/Library/Keychains/git.keychain-db
+export GIT_HOST=git.bnc.ca
+export GIT_SSH_KEY=~/.ssh/keys/giancarlo.franchi@bnc.ca
+export GIT_EMAIL=giancarlo.franchi@bnc.ca
+export GIT_REPOS_DIR=~/Repos
+
+#Terminal Variables
+export CLICOLOR=1
+setopt PROMPT_SUBST
+export PROMPT='%F{red}[%n]%F{blue}[%~]%F{yellow}$(git-branch-parse)%F{white}$ '

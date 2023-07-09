@@ -1,0 +1,222 @@
+##############################
+# Functions
+##############################
+
+# Print Completed or Failed Based On The Last
+# Command Exit Status.
+function _print-cmd-status {
+  if [[ ${?} -eq 0 ]]; then
+    echo "Completed."
+  else
+    echo "Failed."
+  fi
+}
+
+# Print A Header Used For CLI Output
+# $1 = Header Text
+function _print-header {
+  local headerChar="*"
+  local headerCols=30
+  local printedHeaderChar=0
+  
+  while [[ ${printedHeaderChar} -lt ${headerCols} ]]; do
+    echo -n ${headerChar}
+    printedHeaderChar=$[${printedHeaderChar}+1]
+  done
+  
+  echo "\n${1}"
+
+  printedHeaderChar=0
+
+  while [[ ${printedHeaderChar} -lt ${headerCols} ]]; do
+    echo -n ${headerChar}
+    printedHeaderChar=$[${printedHeaderChar}+1]
+  done
+
+  echo "\n"
+}
+
+# Create An Entry In aws-vault
+# $1 = Name Of New AWS Vault Entry
+function aws-vault-add {
+  if [[ ! -z ${1} ]]; then
+    echo "Adding entry ${1} to aws-vault"
+    aws-vault add ${1}
+    entryAdded=`aws-vault list | grep -i "${1}"`
+
+    if [[ ! -z ${entryAdded} ]]; then
+      echo "Entry ${1} was added to aws-vault"
+    else
+      echo "[ERROR] Entry ${1} was not added to aws-vault"
+    fi
+  fi
+}
+
+# Decode A Base 64 Input And Save It As A Clear Text File
+# $1 = File To Decode
+function base64-decode {
+  inputFile=${1}
+
+  if [[ -f ${inputFile} ]]; then
+    cat ${inputFile} | base64 -d  > ${inputFile}.clear
+  fi
+}
+
+# Take A Clear Text Input And Save It As A Base 64 Encoded File
+# $1 = File To Encode
+function base64-encode {
+  inputFile=${1}
+
+  if [[ -f ${inputFile} ]]; then
+    base64 ${inputFile} > ${inputFile}.b64
+  fi
+}
+
+# Update / Upgrade Homebrew
+function brew-update {
+  _print-header "Updating HomeBrew Apps"
+
+  brew update
+  brew upgrade
+}
+
+# Cache GPG And SSH Keys Used For Bitbucket
+function cache-all-keys {
+  _print-header "Caching Bitbucket Keys"
+
+  keychain-unlock ${GIT_KEYCHAIN}
+
+  #GPG Key Caching
+  #Fetch GPG Key Passphrase From Keychain 
+  local gpgKeyPassphrase=$(security find-generic-password -w -s "${GIT_HOST}_gpg-key" -a $(whoami) ${GIT_KEYCHAIN})
+
+  #Get GPG Fingerprint For Bitbucket GPG Key
+  local fingerprint=($(gpg --list-keys --fingerprint | sed -n '4 p' | awk '{ gsub(/ /,""); print }'))
+  local keyGrip=$(gpg --with-keygrip --list-secret-keys ${fingerprint} | awk -F"Keygrip = " 'NR==3{print $2; exit}')
+  
+  echo -n "Caching Bitbucket GPG Key..."
+  
+  touch /tmp/tmp_gpg.txt
+  
+  gpg --encrypt --pinentry-mode=loopback --batch --yes --passphrase ${gpgKeyPassphrase} --sign --recipient ${GIT_EMAIL} /tmp/tmp_gpg.txt
+ 
+  _print-cmd-status
+
+  #SSH Key Caching
+  eval $(ssh-agent) > /dev/null 2>&1
+
+  #Fetch SSH Key Passphrase From KeePass
+  export SSH_KEY_PASS=$(security find-generic-password -w -s "${GIT_HOST}_ssh-key" -a $(whoami) ${GIT_KEYCHAIN})
+
+  echo -n "Caching Bitbucket SSH Key..."
+  
+  #Cache SSH Key Using Passphrase From KeePass
+  local sshKey=$(openssl rsa -in ${GIT_SSH_KEY} -passin env:SSH_KEY_PASS 2> /dev/null)
+  ssh-add -q - <<< "${sshKey}"
+
+  _print-cmd-status
+
+  #Lock Keychain
+  echo ""
+  echo -n "Locking Keychain..."
+
+  keychain-lock ${GIT_KEYCHAIN}
+
+  _print-cmd-status
+
+  # Cleanup
+  rm /tmp/tmp_gpg.txt
+
+  unset fingerprint
+  unset fingerprints
+  unset gpgKeyPassphrase
+  unset keychainPassword
+  unset SSH_KEY_PASS
+  unset sshKey
+}
+
+# Generate A Certificate Signing Request From A Java Keystore
+# $1 = Keystore Name
+# $2 = Certificate Alias
+function gen-csr {
+  keytool -certreq -keystore ${1} -alias ${2} -file ${2}.csr
+}
+
+# Lock A MacOs Keychain
+# $1 = The Name Of The Keychain To Lock
+function keychain-lock {
+  if [[ -n ${1} ]]; then
+    security lock-keychain ${1}
+  fi
+}
+
+# Unlock A MacOS Keychain
+# $1 = The Name Of The Keychain To Unlock
+function keychain-unlock {
+  if [[ -z ${1} ]]; then
+    echo "[ERROR] No Keychain Name Passed To Function."
+    return 1
+  fi
+
+  echo -n "Keychain Unlock Password: "
+  read -s keychainPassword
+  echo "\n"
+
+  if [[ -n ${keychainPassword} ]]; then
+    echo -n "Unlocking keychain..."
+
+    security unlock-keychain -p ${keychainPassword} ${1} 2> /dev/null
+    
+    _print-cmd-status
+    echo "" 
+  else
+    echo "Failed."
+    echo "[ERROR] No Password Entered."
+    return 1  
+  fi
+}
+
+# List All Aliases And Functions Contained In ~/.bash_aliases
+function list-aliases-and-functions() {
+  printf "\n==============\nCustom Aliases\n==============\n\n"
+  grep "^alias" ~/.bash_aliases | sort | sed 's/alias //g'
+
+  printf "\n================\nCustom Functions\n================\n\n"
+  grep "^function" ~/.bash_functions | sort | sed 's/function //g' | sed 's/\ {//g'
+  printf "\n"
+}
+
+# Automate The Daily Update Tasks
+function morning-routine {
+  cache-all-keys
+  echo ""
+   
+  brew-update
+  echo ""
+  
+  _print-header "Mapping Personal Network Drive"
+  open "smb://res.bngf.local/perso/mtl/perso10/frag002"
+  echo ""
+
+  git-update-branches all
+}
+
+# Login To Vault And Get A Token
+# $1 = RES User Name
+function vault-login {
+  export VAULT_TOKEN=`vault login -token-only -method=ldap username=${1}`
+  
+  echo -n "Logging into Vault (${VAULT_ADDR})..."
+
+  if [[ -n ${VAULT_TOKEN} ]]; then
+    echo "Completed."
+  else
+    echo "Failed."
+  fi
+}
+
+# List All Certificate Entries In A Java Keystore
+# $1 = Keystore File
+function view-jks-certificate-entries {
+  openssl x509 -in ${1} -noout -text | head -11
+}
