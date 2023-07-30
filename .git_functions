@@ -4,6 +4,7 @@ function git-branch-parse {
 }
 
 # Create A Local Branch And Push It To The Remote Repository
+# $1 = Branch Name
 function git-create-branch {
   if [[ ! -z ${1} ]]; then
     git checkout -b \"${1}\"
@@ -12,6 +13,7 @@ function git-create-branch {
 }
 
 # Commit All Changed Files To Git
+# $1 = Commit Message
 function git-commit {
   if [[ ! -z ${1} ]]; then
     git add .
@@ -22,17 +24,19 @@ function git-commit {
 }
 
 # Delete A Branch Locally And Remotely
+# $1 = Branch Name
 function git-delete-branch {
   if [[ ! -z ${1} ]]; then
-    branchInLocal=`git branch | grep -i "${1}"`
-    if [[ ! -z ${branchInLocal} ]]; then
-      git branch -d \"${branchInLocal}\"
-      git push -d origin \"${branchInLocal}\"
+    branch_in_local=`git branch | grep -i "${1}"`
+    if [[ ! -z ${branch_in_local} ]]; then
+      git branch -d \"${branch_in_local}\"
+      git push -d origin \"${branch_in_local}\"
     fi
   fi
 }
 
 # Create A Commit And Push It To The Remote Repository
+# $1 = Commit Message
 function git-push {
   if [[ ! -z ${1} ]]; then
     git add .
@@ -44,42 +48,44 @@ function git-push {
 }
 
 # Show List Of Local Git Branches
-function git-show-local-branches {
-  local startDir=$(pwd)
-  local gitAppDirs=($(find ${GIT_REPOS_DIR}/* -maxdepth 0))
+function git-show-local {
+  local start_dir=$(pwd)
+  local git_app_dirs=($(find ${BNC_REPOS_DIR}/* -maxdepth 0))
 
-  for appDir in ${gitAppDirs[@]}; do
-    echo "App: $(basename ${appDir})"
-    gitRepoDirs=$(find ${appDir}/* -maxdepth 0 -type d)
+  for app_dir in ${git_app_dirs[@]}; do
+    echo "App: $(basename ${app_dir})"
+    git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
 
-    for repoDir in ${gitRepoDirs}; do
-      localBranches=$(grep -E '^\\[branch.*\\]$' ${repoDir}/.git/config | sed -e 's/^\[branch \"//g' | sed -e 's/\"\]//g')
-      for branchName in ${localBranches[@]}; do
-        echo "  Branch: ${branchName}"
+    for repo_dir in ${git_repo_dirs}; do
+      echo "  Repo: $(basename ${repo_dir})"
+      local_branches=$(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed -e 's/^\[branch \"//g' | sed -e 's/\"\]//g')
+      for branch_name in ${local_branches[@]}; do
+        echo "    Branch: ${branch_name}"
       done
     done
     echo ""
   done
 
-  cd ${startDir}
+  cd ${start_dir}
 }
 
 # Switch Branch And Pull From Remote To Update It
+# $1 = Branch Name
 function git-switch {
-  branchName=${1}
+  branch_name=${1}
 
-  if [[ ! -z ${branchName} ]]; then
-    git branch | grep -i ${branchName} > /dev/null 2>&1
+  if [[ ! -z ${branch_name} ]]; then
+    git branch | grep -i ${branch_name} > /dev/null 2>&1
 
     if [[ ${?} -eq 0 ]]; then
-      git switch ${branchName} > /dev/null 2>@1 | grep -i "behind" > /dev/null 2>&1
+      git switch ${branch_name} > /dev/null 2>@1 | grep -i "behind" > /dev/null 2>&1
 
       echo "Switched Branch To '${branchName}'."
 
       if [[ ${?} -eq 0 ]]; then
-        echo "Local Branch ${branchName} Is Up To Date With Remote."
+        echo "Local Branch ${branch_name} Is Up To Date With Remote."
       else
-        echo "Local Branch '${branchName}' Is Behind Remote. Pulling Changes From Remote."
+        echo "Local Branch '${branch_name}' Is Behind Remote. Pulling Changes From Remote."
         git pull > /dev/null 2>&1
 
         if [[ ${?} -eq 0 ]]; then
@@ -89,7 +95,7 @@ function git-switch {
         fi
       fi
     else
-      echo "Branch ${branchName} Does Not Exist Locally."
+      echo "Branch ${branch_name} Does Not Exist Locally."
     fi
   else
     echo "No Branch Name Specified to git-switch."
@@ -97,6 +103,7 @@ function git-switch {
 }
 
 # Update Branches In Git Repos
+# $1 = app | all
 function git-update-branches {
   _print-header "Updating Local Git Branches"
 
@@ -105,68 +112,68 @@ function git-update-branches {
     return 1
   fi
 
-  local startDir=$(pwd)
-  local logsDir=${HOME}/.git-update
-  local gitAppDirs=($(find ${GIT_REPOS_DIR}/* -maxdepth 0))
+  local start_dir=$(pwd)
+  local logs_dir=${HOME}/.git-update
+  local git_app_dirs=($(find ${BNC_REPOS_DIR}/* -maxdepth 0))
 
-  mkdir -p ${logsDir}
+  mkdir -p ${logs_dir}
 
   if [[ ${1} == "app" ]]; then
-    local appIndex=1
+    local app_index=1
 
     echo "App List:"
     echo ""
 
-    for appName in ${gitAppDirs[@]}; do
-      echo "   ${appIndex}: $(basename ${appName})"
-      (( appIndex++ ))
+    for app_name in ${git_app_dirs[@]}; do
+      echo "   ${app_index}: $(basename ${app_name})"
+      (( app_index++ ))
     done
     
     echo ""
-    echo -n "Enter A Project Index [1 - $(( ${appIndex} - 1 ))]: "
-    read selectedAppIndex
+    echo -n "Enter A Project Index [1 - $(( ${app_index} - 1 ))]: "
+    read selected_app_index
 
-    if [[ ${selectedAppIndex} -lt 1 || ${selectedAppIndex} -gt $(( ${appIndex} -1 )) ]]; then
+    if [[ ${selected_app_index} -lt 1 || ${selected_app_index} -gt $(( ${app_index} -1 )) ]]; then
       echo "[ERROR] Invalid Application Index Selected"
       return 1
     else
-      local gitAppDirs=(${gitAppDirs[${selectedAppIndex}]})
+      local git_app_dirs=(${git_app_dirs[${selected_app_index}]})
     fi
   fi
 
-  for appDir in ${gitAppDirs[@]}; do
-    mkdir -p ${logsDir}/$(basename ${appDir})
+  for app_dir in ${git_app_dirs[@]}; do
+    mkdir -p ${logs_dir}/$(basename ${app_dir})
 
-    echo "App: $(basename ${appDir})"
+    echo "App: $(basename ${app_dir})"
     
-    if [[ $(ls -A ${appDir}) ]]; then
-      gitRepoDirs=($(find ${appDir}/* -maxdepth 0 -type d))
+    if [[ $(ls -A ${app_dir}) ]]; then
+      git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
     else
-      gitRepoDirs=()
+      git_repo_dirs=()
     fi
 
-    for repoDir in ${gitRepoDirs[@]}; do
-      local logFile=${logsDir}/$(basename ${appDir})/$(basename ${repoDir}).log
+    for repo_dir in ${git_repo_dirs[@]}; do
+      local log_file=${logs_dir}/$(basename ${app_dir})/$(basename ${repo_dir}).log
       
-      echo "   Repo: $(basename ${repoDir})"
-      localBranches=$(grep -E '^\[branch.*\]$' ${repoDir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g')
+      echo "   Repo: $(basename ${repo_dir})"
+      local_branches=$(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g')
       
-      for localBranch in ${localBranches}; do
-        printf '      Branch: %-60s Status: ' "${localBranch}"
+      for local_branch in ${local_branches}; do
+        printf '      Branch: %-60s Status: ' "${local_branch}"
 
-        cd ${repoDir}
-        git switch ${localBranch} &> /dev/null
-        git pull &>> ${logFile}
+        cd ${repo_dir}
+        git switch ${local_branch} &> /dev/null
+        git pull &>> ${log_file}
 
         if [[ $? -eq 0 ]]; then
           echo "Success."
         else
-          echo "Failed. See Log file ${logFile}"
+          echo "Failed. See Log file ${log_file}"
         fi
       done
     done
     echo ""
   done
 
-  cd ${startDir}
+  cd ${start_dir}
 }

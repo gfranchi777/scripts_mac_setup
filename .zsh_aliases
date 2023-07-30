@@ -1,14 +1,10 @@
-##############################
-# Aliases
-##############################
-
 alias cls='clear'
 alias ex='exit'
+alias finder='open /System/Library/CoreServices/Finder.app'
 alias git-branch='git branch'
 alias git-fetch='git fetch --all --tags'
-alias git-lsremote='git for-each-ref refs/remotes \
-                                     --format="%(HEAD) %(align:80,left) %(color:bold yellow) %(refname:short) %(end) %(color:green) %(committerdate) %(color:dim white)%09-%(authorname)" \
-	                             --sort authorname committerdate' 
+alias git-lsremote='git for-each-ref refs/remotes --format="%(HEAD) %(align:80,left) %(color:bold yellow) %(refname:short) %(end) %(color:green) %(committerdate) %(color:dim white)%09-%(authorname)" \
+	                                                --sort authorname committerdate' 
 alias git-prune-remote='git remote prune origin'
 alias ll='ls -lh'
 alias la='ls -alh'
@@ -16,6 +12,7 @@ alias mvn-c='mvn clean'
 alias mvn-cc='mvn clean compile'
 alias mvn-ci='mvn clean install'
 alias mvn-cp='mvn clean package'
+alias pip='pip3.11'
 alias python='python3.11'
 alias sed='gsed'
 alias tf='terraform'
