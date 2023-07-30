@@ -1,12 +1,5 @@
-# Netscope Variables
-export SSL_CERT_FILE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
-export GIT_SSL_CAPATH='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
-export NODE_EXTRA_CA_CERTS='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
-export REQUESTS_CA_BUNDLE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
-export CURL_CA_BUNDLE='/Library/Application Support/Netskope/STAgent/download/nscacert_combined.pem' #DO NOT DELETE: USED BY NETSKOPE
-
 # Python Variabls
-export PYTHONPATH=/Users/giancarlo.franchi@bnc.ca/Repos/personal/python
+export PYTHONPATH=
 
 # Maven Variables
 export M2_HOME=/opt/homebrew/bin
@@ -18,18 +11,6 @@ export JDK_HOME=/Library/Java/JavaVirtualMachines/jdk-20.jdk
 export JAVA_HOME=$(/usr/libexec/java_home)
 export PATH=${JDK_HOME}/bin:${PATH}
 
-# Vault Variables
-VAULT_ADDR_FM_DEV=https://vault.fm.nonprod.cloud.res.bngf.local
-VAULT_ADDR_FM_PRD=https://vault.fm.cloud.res.bngf.local
-
-VAULT_ADDR_ONPREM_PRD=https://vault-onprem-active.prd.bngf.local
-
-VAULT_ADDR_AWS_DEV=https://vault-aws-nonprod.res.bngf.local
-VAULT_ADDR_AWS_PRD=https://vault-aws.prd.bngf.local
-
-export VAULT_ADDR=${VAULT_ADDR_AWS_DEV}
-export VAULT_SKIP_VERIFY=true
-
 # Terraform Variables
 TF_WORKSPACE_DEV=dev
 TF_WORKSPACE_STG=stg
@@ -38,7 +19,6 @@ TF_WORKSPACE_PRD=prd
 export TF_WORKSPACE=${TF_WORKSPACE_DEV}
 
 # AWS Vault Variables
-export AWS_CA_BUNDLE=${SSL_CERT_FILE}
 export AWS_VAULT_BACKEND=keychain
 
 # AWS Variables
@@ -49,11 +29,10 @@ export AWS_REGION=${AWS_REGION_PRIMARY}
 
 # GIT Variables
 export GIT_KEYCHAIN=~/Library/Keychains/git.keychain-db
-export GIT_HOSTS=(git.bnc.ca github.com)
-export GIT_EMAILS=(giancarlo.franchi@bnc.ca wpnx777@wpnx777.com)
-export GIT_SSH_KEYS=(~/.ssh/keys/giancarlo.franchi@bnc.ca ~/.ssh/keys/wpnx777@wpnx777.com)
-export BNC_REPOS_DIR=~/Repos/bnc
-export PERSONAL_REPOS_DIR=~/Repos/personal
+export GIT_HOSTS=()
+export GIT_EMAILS=()
+export GIT_SSH_KEYS=()
+export PERSONAL_REPOS_DIR=
 
 # Terminal Variables
 export CLICOLOR=1
@@ -61,6 +40,3 @@ export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:${PATH}"
 setopt PROMPT_SUBST
 export PROMPT='%F{red}[%n]%F{green}[%d]%F{yellow}$(git-branch-parse)%F{white}
 '
-
-# Legacy Netrowk Personal Drive Path
-export LEGACY_NETWORK_PERSONAL_DRIVE="smb://res.bngf.local/perso/mtl/perso10/frag002"
