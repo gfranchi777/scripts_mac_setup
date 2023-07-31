@@ -114,65 +114,67 @@ function git-update-branches {
 
   local start_dir=$(pwd)
   local logs_dir=${HOME}/.git-update
-  local git_app_dirs=($(find ${BNC_REPOS_DIR}/* -maxdepth 0))
-
-  mkdir -p ${logs_dir}
-
-  if [[ ${1} == "app" ]]; then
-    local app_index=1
-
-    echo "App List:"
-    echo ""
-
-    for app_name in ${git_app_dirs[@]}; do
-      echo "   ${app_index}: $(basename ${app_name})"
-      (( app_index++ ))
-    done
+  for git_repo_dir in ${GIT_REPO_DIRS[@]}; do
+    local git_app_dirs=($(find ${git_repo_dir}/* -maxdepth 0))
     
-    echo ""
-    echo -n "Enter A Project Index [1 - $(( ${app_index} - 1 ))]: "
-    read selected_app_index
+    mkdir -p ${logs_dir}
 
-    if [[ ${selected_app_index} -lt 1 || ${selected_app_index} -gt $(( ${app_index} -1 )) ]]; then
-      echo "[ERROR] Invalid Application Index Selected"
-      return 1
-    else
-      local git_app_dirs=(${git_app_dirs[${selected_app_index}]})
-    fi
-  fi
+    if [[ ${1} == "app" ]]; then
+      local app_index=1
 
-  for app_dir in ${git_app_dirs[@]}; do
-    mkdir -p ${logs_dir}/$(basename ${app_dir})
+      echo "App List:"
+      echo ""
 
-    echo "App: $(basename ${app_dir})"
-    
-    if [[ $(ls -A ${app_dir}) ]]; then
-      git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
-    else
-      git_repo_dirs=()
-    fi
-
-    for repo_dir in ${git_repo_dirs[@]}; do
-      local log_file=${logs_dir}/$(basename ${app_dir})/$(basename ${repo_dir}).log
-      
-      echo "   Repo: $(basename ${repo_dir})"
-      local_branches=$(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g')
-      
-      for local_branch in ${local_branches}; do
-        printf '      Branch: %-60s Status: ' "${local_branch}"
-
-        cd ${repo_dir}
-        git switch ${local_branch} &> /dev/null
-        git pull &>> ${log_file}
-
-        if [[ $? -eq 0 ]]; then
-          echo "Success."
-        else
-          echo "Failed. See Log file ${log_file}"
-        fi
+      for app_name in ${git_app_dirs[@]}; do
+        echo "   ${app_index}: $(basename ${app_name})"
+        (( app_index++ ))
       done
+      
+      echo ""
+      echo -n "Enter A Project Index [1 - $(( ${app_index} - 1 ))]: "
+      read selected_app_index
+
+      if [[ ${selected_app_index} -lt 1 || ${selected_app_index} -gt $(( ${app_index} -1 )) ]]; then
+        echo "[ERROR] Invalid Application Index Selected"
+        return 1
+      else
+        local git_app_dirs=(${git_app_dirs[${selected_app_index}]})
+      fi
+    fi
+
+    for app_dir in ${git_app_dirs[@]}; do
+      mkdir -p ${logs_dir}/$(basename ${app_dir})
+
+      echo "${COLOR_RED}App: ${COLOR_WHITE}$(basename ${app_dir})"
+      
+      if [[ $(ls -A ${app_dir}) ]]; then
+        git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
+      else
+        git_repo_dirs=()
+      fi
+
+      for repo_dir in ${git_repo_dirs[@]}; do
+        local log_file=${logs_dir}/$(basename ${app_dir})/$(basename ${repo_dir}).log
+      
+        echo "   ${COLOR_RED}Repo: ${COLOR_WHITE}$(basename ${repo_dir})"
+        local_branches=($(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g'))
+        
+        for local_branch in ${local_branches[@]}; do
+          printf "      ${COLOR_RED}Branch: ${COLOR_WHITE}%-60s Status: " "${local_branch}"
+
+          cd ${repo_dir}
+          git switch ${local_branch} &> /dev/null
+          git pull &>> ${log_file}
+
+          if [[ $? -eq 0 ]]; then
+            echo "${COLOR_GREEN}Success${COLOR_WHITE}."
+          else
+            echo "${COLOR_RED}Failed. ${COLOR_WHITE}See Log file ${log_file}."
+          fi
+        done
+      done
+      echo ""
     done
-    echo ""
   done
 
   cd ${start_dir}
