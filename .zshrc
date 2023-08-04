@@ -14,4 +14,4 @@ if [[ -f ~/.zsh_functions ]]; then
   . ~/.zsh_functions
 fi
 
-cls
+get-random-quote

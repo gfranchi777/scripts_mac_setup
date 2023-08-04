@@ -2,9 +2,9 @@
 # Command Exit Status.
 function _print-cmd-status {
   if [[ ${?} -eq 0 ]]; then
-    echo "Completed."
+    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
   else
-    echo "Failed."
+    echo "${COLOR_RED}Failed${COLOR_WHITE}."
   fi
 }
 
@@ -12,9 +12,11 @@ function _print-cmd-status {
 # $1 = Header Text
 function _print-header {
   local header_char="*"
-  local header_cols=30
+  local header_cols=65
   local printed_header_char=0
-  
+
+  echo -n "${COLOR_YELLOW}"
+
   while [[ ${printed_header_char} -lt ${header_cols} ]]; do
     echo -n ${header_char}
     ((printed_header_char++))
@@ -29,7 +31,7 @@ function _print-header {
     printed_header_char=$[${printed_header_char}+1]
   done
 
-  echo "\n"
+  echo "${COLOR_WHITE}\n"
 }
 
 # Create An Entry In aws-vault
@@ -134,6 +136,34 @@ function cache-all-keys {
   _print-cmd-status
 }
 
+# Automate The Daily Update Tasks
+function env-refresh {
+  cache-all-keys
+  echo ""
+   
+  brew-update
+  echo ""
+  
+  map-personal-drive
+  echo ""
+
+  git-update-branches all
+}
+
+# Get A Random Quote From The .quotes File
+function get-random-quote {
+  local quote_file=~/.quotes
+  local quote_index=$(shuf -i 1-$(sed -n '$=' ${quote_file}) -n 1)
+
+  if [[ $(expr ${quote_index} % 2) -eq 0 ]]; then
+    ((quote_index--))
+  fi
+  
+  local quote_author=$((quote_index + 1))
+
+  sed -n "${quote_index}p;${quote_author}p" ${quote_file} | fold -sw 80 
+}
+
 # Generate A Certificate Signing Request From A Java Keystore
 # $1 = Keystore Name
 # $2 = Certificate Alias
@@ -198,20 +228,6 @@ function map-personal-drive {
     echo "Drive Already Mapped."
   fi
 
-}
-
-# Automate The Daily Update Tasks
-function morning-routine {
-  cache-all-keys
-  echo ""
-   
-  brew-update
-  echo ""
-  
-  map-personal-drive
-  echo ""
-
-  git-update-branches all
 }
 
 # Login To Vault And Get A Token
