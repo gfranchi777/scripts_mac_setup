@@ -28,13 +28,22 @@ AWS_REGION_DR=eu-west-1
 export AWS_REGION=${AWS_REGION_PRIMARY}
 
 # GIT Variables
-export GIT_KEYCHAIN=
 export GIT_HOSTS=()
 export GIT_EMAILS=()
 export GIT_SSH_KEYS=()
 export GIT_REPO_DIRS=()
 
+# Personal Variables
+export KEYCHAINS=()
+
 # Terminal Variables
+export HISTSIZE=10000
+export SAVEHIST=10000
+export HISTFILE=~/.zshistory
+setopt INC_APPEND_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt EXTENDED_HISTORY   
+
 export CLICOLOR=1
 export COLOR_GREEN="\033[0;32m"
 export COLOR_RED="\033[0;31m"

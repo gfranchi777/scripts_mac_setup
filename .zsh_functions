@@ -54,7 +54,17 @@ function aws-vault-add {
 # $1 = File To Decode
 function base64-decode {
   if [[ -f ${1} ]]; then
-    cat ${1} | base64 -d  > ${1}.clear
+    echo "Decoding Base 64 File ${1}."
+
+    file_name=${1}
+    
+    if [[ ${file_name##*.} == "b64" ]]; then
+      file_name=${file_name%.*}.clear
+    fi
+
+    cat ${1} | base64 -d  > ${file_name}
+
+    echo "Saved Decoded File As ${file_name}"
   fi
 }
 
@@ -62,7 +72,11 @@ function base64-decode {
 # $1 = File To Encode
 function base64-encode {
   if [[ -f ${1} ]]; then
-    base64 ${1} > ${1}.b64
+    echo "Encoding File ${1} To Base 64."
+
+    base64 -i ${1} > ${1}.b64
+
+    echo "Saved Encoded File As ${1}.b64"
   fi
 }
 
@@ -72,6 +86,8 @@ function brew-update {
 
   brew update
   brew upgrade
+
+  echo ""
 }
 
 # Cache GPG And SSH Keys Used For Bitbucket
@@ -80,8 +96,6 @@ function cache-all-keys {
 
   _print-header "Caching Bitbucket Keys"
 
-  keychain-unlock ${GIT_KEYCHAIN}
-  
   eval $(ssh-agent) > /dev/null 2>&1
   
   for git_host in ${GIT_HOSTS}; do
@@ -96,9 +110,15 @@ function cache-all-keys {
 
     touch /tmp/tmp_gpg.txt
 
-    gpg --encrypt --pinentry-mode=loopback --batch --sign --yes \
-        --default-key ${fingerprint} --passphrase ${gpg_key_passphrase} \
-        --recipient ${GIT_EMAILS[${host_index}]} /tmp/tmp_gpg.txt &> /dev/null
+    gpg --encrypt \
+        --pinentry-mode=loopback \
+        --batch \
+        --sign \
+        --yes \
+        --default-key ${fingerprint} \
+        --passphrase ${gpg_key_passphrase} \
+        --recipient ${GIT_EMAILS[${host_index}]} \
+        /tmp/tmp_gpg.txt &> /dev/null
 
     _print-cmd-status
 
@@ -116,36 +136,65 @@ function cache-all-keys {
 
     _print-cmd-status
     
-    echo ""
-
     # Cleanup
     unset fingerprint
     unset gpg_key_passphrase
-    unset keychain_password
     unset SSH_KEY_PASS
     unset ssh_key
     
     ((host_index++))
   done
 
-  #Lock Keychain
-  echo -n "Locking Keychain..."
+  echo ""
+}
 
-  keychain-lock ${GIT_KEYCHAIN}
+# Export The Jira Rest API Token
+function cache-jira-api-token {
+  _print-header "Exporting Jira Rest API Token"
+  
+  echo -n "Exporting Jira API Token..."
 
-  _print-cmd-status
+  export JIRA_API_TOKEN=$(security find-generic-password -w -s "jira-rest-api-token" ${FRAG002_KEYCHAIN})
+
+  if [[ -n ${JIRA_API_TOKEN} ]]; then
+    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+  else
+    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+  fi
+
+  echo ""
+}
+
+# Search starting at the current directory for a text pattern inside any files
+# in the current directory or it's sub directories
+# $1 = Search Pattern
+function find-in-files {
+  if [[ -z ${1} ]]; then
+    echo "[${COLOR_RED}ERROR${COLOR_WHITE}] No Search Pattern Passed To Command."
+    return 1
+  fi
+
+  find . -type f -exec grep -i ${1} '{}' \; -print
+}
+
+# Cache SSH and GPG Keys As Well As A Token Used For Jira API Calls
+function setup-cache {
+  keychain-unlock
+
+  cache-all-keys
+
+  cache-jira-api-token
+
+  keychain-lock
 }
 
 # Automate The Daily Update Tasks
-function env-refresh {
-  cache-all-keys
-  echo ""
-   
+function setup-env {
+  setup-cache
+
   brew-update
-  echo ""
   
   map-personal-drive
-  echo ""
 
   git-update-branches all
 }
@@ -159,9 +208,8 @@ function get-random-quote {
     ((quote_index--))
   fi
   
-  local quote_author=$((quote_index + 1))
-
-  sed -n "${quote_index}p;${quote_author}p" ${quote_file} | fold -sw 80 
+  sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | \
+    fold -sw $(echo -n ${PS1} | wc -m)
 }
 
 # Generate A Certificate Signing Request From A Java Keystore
@@ -171,38 +219,63 @@ function gen-csr {
   keytool -certreq -keystore ${1} -alias ${2} -file ${2}.csr
 }
 
+# Make An API Call To Jira
+# $1 = API To Call
+function jira-api {
+   local url_base='https://jira.bnc.ca/rest/api/2'
+
+   if [[ -z ${1} ]]; then
+     #ERROR
+     return 1
+   fi
+
+   curl --request GET \
+        --url "${url_base}/${1}" \
+        --header 'Accept: application/json' \
+        --header "Authorization: Bearer ${JIRA_API_TOKEN}"\
+}
+
 # Lock A MacOs Keychain
 # $1 = The Name Of The Keychain To Lock
 function keychain-lock {
-  if [[ -n ${1} ]]; then
-    security lock-keychain ${1}
-  fi
+  _print-header "Locking Keychains"
+
+  for keychain in ${KEYCHAINS[@]}; do
+    echo -n "Locking keychain $(basename ${keychain})..."
+
+    security lock-keychain ${keychain}
+
+    _print-cmd-status
+  done
+
+  echo ""
 }
 
 # Unlock A MacOS Keychain
-# $1 = The Name Of The Keychain To Unlock
 function keychain-unlock {
-  if [[ -z ${1} ]]; then
-    echo "[ERROR] No Keychain Name Passed To Function."
-    return 1
-  fi
-
   echo -n "Keychain Unlock Password: "
   read -s keychain_password
   echo "\n"
 
   if [[ -n ${keychain_password} ]]; then
-    echo -n "Unlocking keychain..."
-
-    security unlock-keychain -p ${keychain_password} ${1} 2> /dev/null
+    _print-header "Unlocking Keychains"
     
-    _print-cmd-status
-    echo "" 
+    for keychain in ${KEYCHAINS[@]}; do
+      echo -n "Unlocking keychain $(basename ${keychain})..."
+
+      security unlock-keychain -p ${keychain_password} ${keychain} 2> /dev/null
+      
+      _print-cmd-status
+    done
+
+    unset keychain_password
   else
-    echo "Failed."
-    echo "[ERROR] No Password Entered."
+    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "[${COLOR_RED}ERROR]${COLOR_WHITE} No Password Entered."
     return 1  
   fi
+
+  echo ""
 }
 
 # List All Aliases And Functions Contained In ~/.bash_aliases
@@ -213,7 +286,11 @@ function list-aliases-and-functions() {
   grep "^alias" ~/.${shell_type}_aliases | sort | sed 's/alias //g'
 
   printf "\n================\nCustom Functions\n================\n\n"
-  grep "^function" ~/.${shell_type}_functions | sort | sed 's/function //g' | sed 's/\ {//g'
+  grep "^function" ~/.${shell_type}_functions | \
+    sort | \
+    sed 's/function //g' | \
+    sed 's/\ {//g'
+  
   printf "\n"
 }
 
@@ -221,26 +298,27 @@ function list-aliases-and-functions() {
 function map-personal-drive {
   _print-header "Mapping Personal Network Drive"
 
-  if [[ -z $(mount | grep $(basename ${LEGACY_NETWORK_PERSONAL_DRIVE})) ]]; then  
-    open ${LEGACY_NETWORK_PERSONAL_DRIVE}
+  if [[ -z $(mount | grep $(basename ${LEGACY_PERSONAL_DRIVE})) ]]; then
+    open ${LEGACY_PERSONAL_DRIVE}
     _print-cmd-status
   else
     echo "Drive Already Mapped."
   fi
 
+  echo ""
 }
 
 # Login To Vault And Get A Token
-# $1 = RES User Name
 function vault-login {
-  export VAULT_TOKEN=`vault login -token-only -method=ldap username=${1}`
+  export VAULT_TOKEN=`vault login -token-only \
+                                  -method=ldap username=${SHORT_ID}`
   
   echo -n "Logging into Vault (${VAULT_ADDR})..."
 
   if [[ -n ${VAULT_TOKEN} ]]; then
-    echo "Completed."
+    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
   else
-    echo "Failed."
+    echo "${COLOR_RED}Failed${COLOR_WHITE}."
   fi
 }
 
