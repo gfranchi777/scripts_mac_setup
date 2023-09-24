@@ -36,19 +36,29 @@ export GIT_REPO_DIRS=()
 # Personal Variables
 export KEYCHAINS=()
 
-# Terminal Variables
+# Terminal Variables - History
 export HISTSIZE=10000
 export SAVEHIST=10000
 export HISTFILE=~/.zshistory
 setopt INC_APPEND_HISTORY
 setopt HIST_IGNORE_DUPS
-setopt EXTENDED_HISTORY   
+setopt EXTENDED_HISTORY
 
+# Terminal Variables - Colors
 export CLICOLOR=1
-export COLOR_GREEN="\033[0;32m"
-export COLOR_RED="\033[0;31m"
-export COLOR_WHITE="\033[0;29m"
-export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:${PATH}"
+export GREEN="\033[0;32m"
+export RED="\033[0;31m"
+export WHITE="\033[0;29m"
+export YELLOW="\033[0;33m"
+
+# Terminal Variables - Prompt
+autoload -Uz vcs_info
+precmd() { vcs_info }
+zstyle ':vcs_info:git:*' formats '%F{white}[%F{yellow}%b%F{white}]'
+
 setopt PROMPT_SUBST
-export PROMPT='%F{red}[%n:%m]%F{green}[%~]%F{yellow}$(git-branch-parse)%F{white}
+export PROMPT='%F{white}[%F{red}%n%F{white}:%F{red}%m%F{white}][%F{green}%~%F{white}]%F{yellow}${vcs_info_msg_0_}%F{white}
 $ '
+
+# Terminal Variables - Path
+export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:${PATH}"

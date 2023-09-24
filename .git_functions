@@ -1,8 +1,3 @@
-# Get The Name Of The Branch Contained In The Current Folder
-function git-branch-parse {
-  git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/[\1]/'
-}
-
 # Create A Local Branch And Push It To The Remote Repository
 # $1 = Branch Name
 function git-create-branch {
@@ -146,7 +141,7 @@ function git-update-branches {
     for app_dir in ${git_app_dirs[@]}; do
       mkdir -p ${logs_dir}/$(basename ${app_dir})
 
-      echo "${COLOR_YELLOW}App: ${COLOR_WHITE}$(basename ${app_dir})"
+      echo "${YELLOW}App: ${WHITE}$(basename ${app_dir})"
       
       if [[ $(ls -A ${app_dir}) ]]; then
         git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
@@ -157,23 +152,23 @@ function git-update-branches {
       for repo_dir in ${git_repo_dirs[@]}; do
         local log_file=${logs_dir}/$(basename ${app_dir})/$(basename ${repo_dir}).log
       
-        echo "   ${COLOR_YELLOW}Repo: ${COLOR_WHITE}$(basename ${repo_dir})"
+        echo "   ${YELLOW}Repo: ${WHITE}$(basename ${repo_dir})"
         local_branches=($(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g'))
         
         for local_branch in ${local_branches[@]}; do
-          echo "      ${COLOR_YELLOW}Branch${COLOR_WHITE}: ${local_branch}"
+          echo "      ${YELLOW}Branch${WHITE}: ${local_branch}"
 
           cd ${repo_dir}
           git switch ${local_branch} &> /dev/null
           git pull &>> ${log_file}
 
-          echo -n "      ${COLOR_YELLOW}Status${COLOR_WHITE}: "
+          echo -n "      ${YELLOW}Status${WHITE}: "
           
           if [[ $? -eq 0 ]]; then
-            echo "${COLOR_GREEN}Success${COLOR_WHITE}."
+            echo "${GREEN}Success${WHITE}."
           else
-            echo "${COLOR_RED}Failure${COLOR_WHITE}."
-            echo "      ${COLOR_YELLOW}Log   ${COLOR_WHITE}: ~/.git_update/$(basename ${app_dir})/$(basename ${repo_dir}).log"
+            echo "${RED}Failure${WHITE}."
+            echo "      ${YELLOW}Log   ${WHITE}: ~/.git_update/$(basename ${app_dir})/$(basename ${repo_dir}).log"
           fi
         done
       done

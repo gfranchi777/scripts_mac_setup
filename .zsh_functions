@@ -2,9 +2,9 @@
 # Command Exit Status.
 function _print-cmd-status {
   if [[ ${?} -eq 0 ]]; then
-    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+    echo "${GREEN}Completed${WHITE}."
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "${RED}Failed${WHITE}."
   fi
 }
 
@@ -15,7 +15,7 @@ function _print-header {
   local header_cols=65
   local printed_header_char=0
 
-  echo -n "${COLOR_YELLOW}"
+  echo -n "${YELLOW}"
 
   while [[ ${printed_header_char} -lt ${header_cols} ]]; do
     echo -n ${header_char}
@@ -31,7 +31,7 @@ function _print-header {
     printed_header_char=$[${printed_header_char}+1]
   done
 
-  echo "${COLOR_WHITE}\n"
+  echo "${WHITE}\n"
 }
 
 # Create An Entry In aws-vault
@@ -101,10 +101,14 @@ function cache-all-keys {
   for git_host in ${GIT_HOSTS}; do
     #GPG Key Caching
     #Fetch GPG Key Passphrase From Keychain 
-    local gpg_key_passphrase=$(security find-generic-password -w -s "${git_host}_gpg-key" ${GIT_KEYCHAIN})
+    local gpg_key_passphrase=$(find-in-keychains "${git_host}_gpg-key")
 
     #Get GPG Fingerprint 
-    local fingerprint=($(gpg --list-keys --fingerprint -a "${GIT_EMAILS[${host_index}]}"| sed -n '2 p' | awk '{ gsub(/ /,""); print }'))
+    local fingerprint=($(gpg --list-keys \
+                             --fingerprint \
+                             --armor "${GIT_EMAILS[${host_index}]}" \
+                           | sed -n '2 p' \
+                           | awk '{ gsub(/ /,""); print }'))
 
     echo -n "Caching ${git_host} GPG Key..."
 
@@ -126,12 +130,14 @@ function cache-all-keys {
 
     #SSH Key Caching
     #Fetch SSH Key Passphrase From Keychain
-    export SSH_KEY_PASS=$(security find-generic-password -w -s "${git_host}_ssh-key" ${GIT_KEYCHAIN})
+    export SSH_KEY_PASS=$(find-in-keychains "${git_host}_ssh-key")
 
     echo -n "Caching ${git_host} SSH Key..."
     
     #Cache SSH Key
-    local ssh_key=$(openssl rsa -in ${GIT_SSH_KEYS[${host_index}]} -passin env:SSH_KEY_PASS 2> /dev/null)
+    local ssh_key=$(openssl rsa \
+                            -in ${GIT_SSH_KEYS[${host_index}]} \
+                            -passin env:SSH_KEY_PASS 2> /dev/null)
     ssh-add -q - <<< "${ssh_key}"
 
     _print-cmd-status
@@ -154,12 +160,12 @@ function cache-jira-api-token {
   
   echo -n "Exporting Jira API Token..."
 
-  export JIRA_API_TOKEN=$(security find-generic-password -w -s "jira-rest-api-token" ${FRAG002_KEYCHAIN})
+  export JIRA_API_TOKEN=$(find-in-keychains "jira-rest-api-token")
 
   if [[ -n ${JIRA_API_TOKEN} ]]; then
-    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+    echo "${GREEN}Completed${WHITE}."
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "${RED}Failed${WHITE}."
   fi
 
   echo ""
@@ -170,11 +176,30 @@ function cache-jira-api-token {
 # $1 = Search Pattern
 function find-in-files {
   if [[ -z ${1} ]]; then
-    echo "[${COLOR_RED}ERROR${COLOR_WHITE}] No Search Pattern Passed To Command."
+    echo "[${RED}ERROR${WHITE}] No Search Pattern Passed To Command."
     return 1
   fi
 
   find . -type f -exec grep -i ${1} '{}' \; -print
+}
+
+# Search in the keychains listed in $KEYCHAINS to find a given value
+# In order for this function to work, keychains must be unlocked.
+# $1 = key name
+function find-in-keychains {
+  for keychain in ${KEYCHAINS}; do
+    value=$(security find-generic-password -w -s "${1}" ${keychain} 2> /dev/null)
+
+    if [[ -n ${value} ]]; then
+      break
+    fi
+  done
+
+  if [[ -z ${value} ]]; then
+    return 1
+  fi
+
+  echo "${value}"
 }
 
 # Cache SSH and GPG Keys As Well As A Token Used For Jira API Calls
@@ -208,8 +233,8 @@ function get-random-quote {
     ((quote_index--))
   fi
   
-  sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | \
-    fold -sw $(echo -n ${PS1} | wc -m)
+  sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} \
+    | fold -sw $(echo -n ${PS1} | wc -m)
 }
 
 # Generate A Certificate Signing Request From A Java Keystore
@@ -270,8 +295,8 @@ function keychain-unlock {
 
     unset keychain_password
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
-    echo "[${COLOR_RED}ERROR]${COLOR_WHITE} No Password Entered."
+    echo "${RED}Failed${WHITE}."
+    echo "[${RED}ERROR]${WHITE} No Password Entered."
     return 1  
   fi
 
@@ -310,20 +335,14 @@ function map-personal-drive {
 
 # Login To Vault And Get A Token
 function vault-login {
-  export VAULT_TOKEN=`vault login -token-only \
-                                  -method=ldap username=${SHORT_ID}`
+  export VAULT_TOKEN=$(vault login -token-only \
+                                   -method=ldap username=${SHORT_ID})
   
   echo -n "Logging into Vault (${VAULT_ADDR})..."
 
   if [[ -n ${VAULT_TOKEN} ]]; then
-    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+    echo "${GREEN}Completed${WHITE}."
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "${RED}Failed${WHITE}."
   fi
-}
-
-# List All Certificate Entries In A Java Keystore
-# $1 = Keystore File
-function view-jks-certificate-entries {
-  openssl x509 -in ${1} -noout -text | head -11
 }
