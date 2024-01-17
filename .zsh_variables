@@ -1,15 +1,16 @@
 # Python Variabls
 export PYTHONPATH=
 
+# OpenSSL Variables
+export OPENSSL_HOME=
+
 # Maven Variables
-export M2_HOME=/opt/homebrew/bin
+export M2_HOME=
 export MAVEN_OPTS="-Xms256m -Xmx512m"
-export PATH=${M2_HOME}/bin:${PATH}
 
 # Java Variables
-export JDK_HOME=/Library/Java/JavaVirtualMachines/jdk-20.jdk
+export JDK_HOME=
 export JAVA_HOME=$(/usr/libexec/java_home)
-export PATH=${JDK_HOME}/bin:${PATH}
 
 # Terraform Variables
 TF_WORKSPACE_DEV=dev
@@ -31,10 +32,11 @@ export AWS_REGION=${AWS_REGION_PRIMARY}
 export GIT_HOSTS=()
 export GIT_EMAILS=()
 export GIT_SSH_KEYS=()
-export GIT_REPO_DIRS=()
+export GIT_REPO_DIRS=~/Repos
 
 # Personal Variables
 export KEYCHAINS=()
+export LAST_SETUP_ENV=~/.last-setup-env
 
 # Terminal Variables
 export HISTSIZE=10000
@@ -42,13 +44,16 @@ export SAVEHIST=10000
 export HISTFILE=~/.zshistory
 setopt INC_APPEND_HISTORY
 setopt HIST_IGNORE_DUPS
-setopt EXTENDED_HISTORY   
+setopt EXTENDED_HISTORY
 
 export CLICOLOR=1
 export COLOR_GREEN="\033[0;32m"
 export COLOR_RED="\033[0;31m"
 export COLOR_WHITE="\033[0;29m"
-export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:${PATH}"
+export COLOR_YELLOW="\033[0;33m"
+
+export PATH="${JDK_HOME}/bin:${M2_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
+
 setopt PROMPT_SUBST
 export PROMPT='%F{red}[%n:%m]%F{green}[%~]%F{yellow}$(git-branch-parse)%F{white}
 $ '
