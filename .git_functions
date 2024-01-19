@@ -156,6 +156,10 @@ function git-update-branches {
 
       for repo_dir in ${git_repo_dirs[@]}; do
         local log_file=${logs_dir}/$(basename ${app_dir})/$(basename ${repo_dir}).log
+        
+        if [[ -z $(ls -A ${repo_dir}) ]]; then
+          continue
+        fi
       
         echo "   ${COLOR_YELLOW}Repo: ${COLOR_WHITE}$(basename ${repo_dir})"
         local_branches=($(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g'))
