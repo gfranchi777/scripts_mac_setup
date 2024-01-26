@@ -50,13 +50,14 @@ function git-push {
 # Show List Of Local Git Branches
 function git-show-local {
   local start_dir=$(pwd)
-  local git_app_dirs=($(find ${BNC_REPOS_DIR}/* -maxdepth 0))
+  local git_project_dirs=($(find ${BNC_REPOS_DIR}/* -maxdepth 0))
 
-  for app_dir in ${git_app_dirs[@]}; do
-    echo "App: $(basename ${app_dir})"
-    git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
+  for project_dir in ${git_project_dirs[@]}; do
+    echo "Project: $(basename ${project_dir})"
+    git_repo_dirs=($(find ${project_dir}/* -maxdepth 0 -type d))
 
     for repo_dir in ${git_repo_dirs}; do
+      echo ""
       echo "  Repo: $(basename ${repo_dir})"
       local_branches=$(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed -e 's/^\[branch \"//g' | sed -e 's/\"\]//g')
       for branch_name in ${local_branches[@]}; do
@@ -103,12 +104,12 @@ function git-switch {
 }
 
 # Update Branches In Git Repos
-# $1 = app | all
+# $1 = all | project
 function git-update-branches {
   _print-header "Updating Local Git Branches"
 
-  if [[ ! (${1} == "app" || ${1} == "all") ]]; then
-    echo "SYNTAX: git-update-branch [all|app]"
+  if [[ ! (${1} == "project" || ${1} == "all") ]]; then
+    echo "SYNTAX: git-update-branch [all|project]"
     return 1
   fi
 
@@ -116,51 +117,52 @@ function git-update-branches {
   local logs_dir=${HOME}/.git-update
   
   for git_repo_dir in ${GIT_REPO_DIRS[@]}; do
-    local git_app_dirs=($(find ${git_repo_dir}/* -maxdepth 0))
+    local git_project_dirs=($(find ${git_repo_dir}/* -maxdepth 0))
     
     mkdir -p ${logs_dir}
 
-    if [[ ${1} == "app" ]]; then
-      local app_index=1
+    if [[ ${1} == "project" ]]; then
+      local project_index=1
 
-      echo "App List:"
+      echo "Project List:"
       echo ""
 
-      for app_name in ${git_app_dirs[@]}; do
-        echo "   ${app_index}: $(basename ${app_name})"
-        (( app_index++ ))
+      for project_name in ${git_project_dirs[@]}; do
+        echo "   ${project_index}: $(basename ${project_name})"
+        (( project_index++ ))
       done
       
       echo ""
-      echo -n "Enter A Project Index [1 - $(( ${app_index} - 1 ))]: "
-      read selected_app_index
+      echo -n "Enter A Project Index [1 - $(( ${project_index} - 1 ))]: "
+      read selected_project_index
 
-      if [[ ${selected_app_index} -lt 1 || ${selected_app_index} -gt $(( ${app_index} -1 )) ]]; then
-        echo "[ERROR] Invalid Application Index Selected"
+      if [[ ${selected_project_index} -lt 1 || ${selected_project_index} -gt $(( ${project_index} -1 )) ]]; then
+        echo "[ERROR] Invalid Project Index Selected"
         return 1
       else
-        local git_app_dirs=(${git_app_dirs[${selected_app_index}]})
+        local git_project_dirs=(${git_project_dirs[${selected_project_index}]})
       fi
     fi
 
-    for app_dir in ${git_app_dirs[@]}; do
-      mkdir -p ${logs_dir}/$(basename ${app_dir})
+    for project_dir in ${git_project_dirs[@]}; do
+      mkdir -p ${logs_dir}/$(basename ${project_dir})
 
-      echo "${COLOR_YELLOW}App: ${COLOR_WHITE}$(basename ${app_dir})"
+      echo "${COLOR_YELLOW}Project: ${COLOR_WHITE}$(basename ${project_dir})"
       
-      if [[ $(ls -A ${app_dir}) ]]; then
-        git_repo_dirs=($(find ${app_dir}/* -maxdepth 0 -type d))
+      if [[ $(ls -A ${project_dir}) ]]; then
+        git_repo_dirs=($(find ${project_dir}/* -maxdepth 0 -type d))
       else
         git_repo_dirs=()
       fi
 
       for repo_dir in ${git_repo_dirs[@]}; do
-        local log_file=${logs_dir}/$(basename ${app_dir})/$(basename ${repo_dir}).log
+        local log_file=${logs_dir}/$(basename ${project_dir})/$(basename ${repo_dir}).log
         
         if [[ -z $(ls -A ${repo_dir}) ]]; then
           continue
         fi
-      
+        
+        echo "" 
         echo "   ${COLOR_YELLOW}Repo: ${COLOR_WHITE}$(basename ${repo_dir})"
         local_branches=($(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g'))
         
@@ -174,10 +176,10 @@ function git-update-branches {
           echo -n "      ${COLOR_YELLOW}Status${COLOR_WHITE}: "
           
           if [[ $? -eq 0 ]]; then
-            echo "${COLOR_GREEN}Success${COLOR_WHITE}."
+            echo "${COLOR_GREEN}Success${COLOR_WHITE}"
           else
-            echo "${COLOR_RED}Failure${COLOR_WHITE}."
-            echo "      ${COLOR_YELLOW}Log   ${COLOR_WHITE}: ~/.git_update/$(basename ${app_dir})/$(basename ${repo_dir}).log"
+            echo "${COLOR_RED}Failure${COLOR_WHITE}"
+            echo "      ${COLOR_YELLOW}Log   ${COLOR_WHITE}: ~/.git_update/$(basename ${project_dir})/$(basename ${repo_dir}).log"
           fi
         done
       done
