@@ -97,7 +97,8 @@ function cache-all-keys {
   _print-header "Caching Bitbucket Keys"
 
   eval $(ssh-agent) > /dev/null 2>&1
-  
+  gpgconf --kill all
+
   for git_host in ${GIT_HOSTS}; do
     #GPG Key Caching
     #Fetch GPG Key Passphrase From Keychain 
