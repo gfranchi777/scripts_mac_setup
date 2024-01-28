@@ -115,11 +115,10 @@ function git-update-branches {
 
   local start_dir=$(pwd)
   local logs_dir=${HOME}/.git-update
-  
-  for git_repo_dir in ${GIT_REPO_DIRS[@]}; do
-    local git_project_dirs=($(find ${git_repo_dir}/* -maxdepth 0))
-    
-    mkdir -p ${logs_dir}
+  mkdir -p "${logs_dir}"
+
+  for git_repo_dir in "${GIT_REPO_DIRS[@]}"; do
+    local git_project_dirs=($(find "${git_repo_dir}" -maxdepth 1 -type d ! -path "${git_repo_dir}" -prune))
 
     if [[ ${1} == "project" ]]; then
       local project_index=1
@@ -127,65 +126,66 @@ function git-update-branches {
       echo "Project List:"
       echo ""
 
-      for project_name in ${git_project_dirs[@]}; do
-        echo "   ${project_index}: $(basename ${project_name})"
+      for project_name in "${git_project_dirs[@]}"; do
+        echo "   ${project_index}: $(basename "${project_name}")"
         (( project_index++ ))
       done
-      
+
       echo ""
-      echo -n "Enter A Project Index [1 - $(( ${project_index} - 1 ))]: "
+      echo -n "Enter A Project Index [1 - ${#git_project_dirs[@]}]: "
       read selected_project_index
 
-      if [[ ${selected_project_index} -lt 1 || ${selected_project_index} -gt $(( ${project_index} -1 )) ]]; then
-        echo "[ERROR] Invalid Project Index Selected"
+      if [[ ${selected_project_index} -lt 1 || ${selected_project_index} -gt ${#git_project_dirs[@]} ]]; then
+        echo "[ERROR] Invalid project Index Selected"
         return 1
       else
-        local git_project_dirs=(${git_project_dirs[${selected_project_index}]})
+        git_project_dirs=("${git_project_dirs[${selected_project_index}-1]}")
       fi
     fi
 
-    for project_dir in ${git_project_dirs[@]}; do
-      mkdir -p ${logs_dir}/$(basename ${project_dir})
+    for project_dir in "${git_project_dirs[@]}"; do
+      local project_name=$(basename "${project_dir}")
+      local project_log_dir="${logs_dir}/${project_name}"
+      mkdir -p "${project_log_dir}"
 
-      echo "${COLOR_YELLOW}Project: ${COLOR_WHITE}$(basename ${project_dir})"
-      
-      if [[ $(ls -A ${project_dir}) ]]; then
-        git_repo_dirs=($(find ${project_dir}/* -maxdepth 0 -type d))
+      echo "${YELLOW}Project: ${WHITE}${project_name}"
+
+      if [[ -d "${project_dir}" && -n "$(ls -A "${project_dir}")" ]]; then
+        local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d ! -path "${project_dir}" -prune))
       else
         git_repo_dirs=()
       fi
 
-      for repo_dir in ${git_repo_dirs[@]}; do
-        local log_file=${logs_dir}/$(basename ${project_dir})/$(basename ${repo_dir}).log
-        
-        if [[ -z $(ls -A ${repo_dir}) ]]; then
+      for repo_dir in "${git_repo_dirs[@]}"; do
+        local repo_name=$(basename "${repo_dir}")
+        local log_file="${project_log_dir}/${repo_name}.log"
+
+        echo "" 
+        echo "   ${YELLOW}Repo: ${WHITE}${repo_name}"
+
+        if [[ ! -d "${repo_dir}/.git" ]]; then
+          echo "      ${RED}Not a Git repository${WHITE}"
           continue
         fi
-        
-        echo "" 
-        echo "   ${COLOR_YELLOW}Repo: ${COLOR_WHITE}$(basename ${repo_dir})"
-        local_branches=($(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed 's/^\[branch \"//g' | sed 's/\"\]//g'))
-        
-        for local_branch in ${local_branches[@]}; do
-          echo "      ${COLOR_YELLOW}Branch${COLOR_WHITE}: ${local_branch}"
 
-          cd ${repo_dir}
-          git switch ${local_branch} &> /dev/null
-          git pull &>> ${log_file}
-
-          echo -n "      ${COLOR_YELLOW}Status${COLOR_WHITE}: "
+        local_branches=($(git -C "${repo_dir}" for-each-ref --format '%(refname:short)' refs/heads/))
+        
+        for local_branch in "${local_branches[@]}"; do
+          echo "      ${YELLOW}Branch${WHITE}: ${local_branch}"
+          echo -n "      ${YELLOW}Status${WHITE}: "
+          
+          git -C "${repo_dir}" switch "${local_branch}" &> /dev/null
+          git -C "${repo_dir}" pull &>> "${log_file}"
           
           if [[ $? -eq 0 ]]; then
-            echo "${COLOR_GREEN}Success${COLOR_WHITE}"
+            echo "${GREEN}Success${WHITE}"
           else
-            echo "${COLOR_RED}Failure${COLOR_WHITE}"
-            echo "      ${COLOR_YELLOW}Log   ${COLOR_WHITE}: ~/.git_update/$(basename ${project_dir})/$(basename ${repo_dir}).log"
+            echo "${RED}Failure${WHITE}"
+            echo "      ${YELLOW}Log   ${WHITE}: ${project_log_dir}/${repo_name}.log"
           fi
         done
       done
       echo ""
     done
   done
-
-  cd ${start_dir}
 }

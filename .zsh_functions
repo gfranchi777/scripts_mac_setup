@@ -2,9 +2,9 @@
 # Command Exit Status.
 function _print-cmd-status {
   if [[ ${?} -eq 0 ]]; then
-    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+    echo "${GREEN}Completed${WHITE}"
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "${RED}Failed${WHITE}"
   fi
 }
 
@@ -15,7 +15,7 @@ function _print-header {
   local header_cols=65
   local printed_header_char=0
 
-  echo -n "${COLOR_YELLOW}"
+  echo -n "${YELLOW}"
 
   while [[ ${printed_header_char} -lt ${header_cols} ]]; do
     echo -n ${header_char}
@@ -31,7 +31,7 @@ function _print-header {
     printed_header_char=$[${printed_header_char}+1]
   done
 
-  echo "${COLOR_WHITE}\n"
+  echo "${WHITE}\n"
 }
 
 # Create An Entry In aws-vault
@@ -86,6 +86,7 @@ function brew-update {
 
   brew update
   brew upgrade
+  brew upgrade --cask --greedy
 
   echo ""
 }
@@ -97,6 +98,7 @@ function cache-all-keys {
   _print-header "Caching Bitbucket Keys"
 
   eval $(ssh-agent) > /dev/null 2>&1
+
   gpgconf --kill all
 
   for git_host in ${GIT_HOSTS}; do
@@ -155,12 +157,12 @@ function cache-jira-api-token {
   
   echo -n "Exporting Jira API Token..."
 
-  export JIRA_API_TOKEN=$(security find-generic-password -w -s "jira-rest-api-token" ${FRAG002_KEYCHAIN})
+  #export JIRA_API_TOKEN=$(security find-generic-password -w -s "jira-rest-api-token" ${FRAG002_KEYCHAIN})
 
   if [[ -n ${JIRA_API_TOKEN} ]]; then
-    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+    echo "${GREEN}Completed${WHITE}."
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "${RED}Failed${WHITE}."
   fi
 
   echo ""
@@ -171,7 +173,7 @@ function cache-jira-api-token {
 # $1 = Search Pattern
 function find-in-files {
   if [[ -z ${1} ]]; then
-    echo "[${COLOR_RED}ERROR${COLOR_WHITE}] No Search Pattern Passed To Command."
+    echo "[${RED}ERROR${WHITE}] No Search Pattern Passed To Command."
     return 1
   fi
 
@@ -184,8 +186,6 @@ function setup-cache {
 
   cache-all-keys
 
-  cache-jira-api-token
-
   keychain-lock
 }
 
@@ -195,8 +195,6 @@ function setup-env {
 
   brew-update
   
-  map-personal-drive
-
   git-update-branches all
 }
 
@@ -271,8 +269,8 @@ function keychain-unlock {
 
     unset keychain_password
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
-    echo "[${COLOR_RED}ERROR]${COLOR_WHITE} No Password Entered."
+    echo "${RED}Failed${WHITE}."
+    echo "[${RED}ERROR]${WHITE} No Password Entered."
     return 1  
   fi
 
@@ -317,9 +315,9 @@ function vault-login {
   echo -n "Logging into Vault (${VAULT_ADDR})..."
 
   if [[ -n ${VAULT_TOKEN} ]]; then
-    echo "${COLOR_GREEN}Completed${COLOR_WHITE}."
+    echo "${GREEN}Completed${WHITE}."
   else
-    echo "${COLOR_RED}Failed${COLOR_WHITE}."
+    echo "${RED}Failed${WHITE}."
   fi
 }
 

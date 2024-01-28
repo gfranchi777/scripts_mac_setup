@@ -47,10 +47,10 @@ setopt HIST_IGNORE_DUPS
 setopt EXTENDED_HISTORY
 
 export CLICOLOR=1
-export COLOR_GREEN="\033[0;32m"
-export COLOR_RED="\033[0;31m"
-export COLOR_WHITE="\033[0;29m"
-export COLOR_YELLOW="\033[0;33m"
+export GREEN="\033[0;32m"
+export RED="\033[0;31m"
+export WHITE="\033[0;29m"
+export YELLOW="\033[0;33m"
 
 export PATH="${JDK_HOME}/bin:${M2_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
 
