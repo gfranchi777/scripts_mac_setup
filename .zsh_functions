@@ -211,6 +211,11 @@ function get-random-quote {
     fold -sw $(echo -n ${PS1} | wc -m)
 }
 
+# Get A Random Quote From An Online Source
+function get-random-quote-api {
+  py ~/.get-random-quote-api.py
+}
+
 # Generate A Certificate Signing Request From A Java Keystore
 # $1 = Keystore Name
 # $2 = Certificate Alias
