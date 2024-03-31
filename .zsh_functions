@@ -233,7 +233,7 @@ function gen-csr {
 # Make An API Call To Jira
 # $1 = API To Call
 function jira-api {
-   local url_base='https://jira.bnc.ca/rest/api/2'
+   local url_base=''
 
    if [[ -z ${1} ]]; then
      #ERROR
