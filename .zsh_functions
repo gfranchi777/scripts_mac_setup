@@ -198,22 +198,29 @@ function setup-env {
   git-update-branches all
 }
 
-# Get A Random Quote From The .quotes File
+# Get a random quote from an online api.
+# If the api call fails, then default to the local ~/.quotes file.
 function get-random-quote {
-  local quote_file=~/.quotes
-  local quote_index=$(shuf -i 1-$(sed -n '$=' ${quote_file}) -n 1)
+  local api_uri="https://zenquotes.io/api/random"
 
-  if [[ $(expr ${quote_index} % 2) -eq 0 ]]; then
-    ((quote_index--))
-  fi
+  local status_code=$(curl --write-out %{http_code} --silent --output /dev/null ${api_uri})
   
-  sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | \
-    fold -sw $(echo -n ${PS1} | wc -m)
-}
+  if [[ ${status_code} -eq 200 ]]; then
+    response=$(curl -s ${api_uri})
 
-# Get A Random Quote From An Online Source
-function get-random-quote-api {
-  py ~/.get-random-quote-api.py
+    echo ${response} | jq -r '.[] | "\(.q)"'
+    echo ${response} | jq -r '.[] | "- \(.a)"'
+  else
+    local quote_file=~/.quotes
+    local quote_index=$(shuf -i 1-$(sed -n '$=' ${quote_file}) -n 1)
+
+    if [[ $(expr ${quote_index} % 2) -eq 0 ]]; then
+      ((quote_index--))
+    fi
+  
+    sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | \
+      fold -sw $(echo -n ${PS1} | wc -m)
+    fi
 }
 
 # Generate A Certificate Signing Request From A Java Keystore
