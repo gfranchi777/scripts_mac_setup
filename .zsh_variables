@@ -1,15 +1,21 @@
-# Python Variabls
-export PYTHONPATH=
+#Homebrew Variables
+export BREW_HOME=/opt/homebrew
 
-# OpenSSL Variables
-export OPENSSL_HOME=
+# Python Variabls
+export PYTHONPATH=/Users/wpnx777/Repos/Python
+
+#OpenSSL Variables
+export OPENSSL_HOME=${BREW_HOME}/opt/openssl
 
 # Maven Variables
-export M2_HOME=
+export M2_HOME=${BREW_HOME}/opt/maven
 export MAVEN_OPTS="-Xms256m -Xmx512m"
 
+# Homebrew Variables
+export PATH=${PATH}:/opt/homebrew/bin
+
 # Java Variables
-export JDK_HOME=
+export JDK_HOME=/Library/Java/JavaVirtualMachines/openjdk-21.jdk
 export JAVA_HOME=$(/usr/libexec/java_home)
 
 # Terraform Variables
@@ -29,13 +35,13 @@ AWS_REGION_DR=eu-west-1
 export AWS_REGION=${AWS_REGION_PRIMARY}
 
 # GIT Variables
-export GIT_HOSTS=()
-export GIT_EMAILS=()
-export GIT_SSH_KEYS=()
+export GIT_HOSTS=(github.com)
+export GIT_EMAILS=(wpnx777@wpnx777.com)
+export GIT_SSH_KEYS=(~/.ssh/wpnx777.id_rsa)
 export GIT_REPO_DIRS=~/Repos
 
 # Personal Variables
-export KEYCHAINS=()
+export KEYCHAINS=(~/Library/Keychains/wpnx777.keychain-db)
 export LAST_SETUP_ENV=~/.last-setup-env
 
 # Terminal Variables
@@ -53,7 +59,6 @@ export WHITE="\033[0;29m"
 export YELLOW="\033[0;33m"
 
 export PATH="${JDK_HOME}/bin:${M2_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
-
 setopt PROMPT_SUBST
 export PROMPT='%F{red}[%n:%m]%F{green}[%~]%F{yellow}$(git-branch-parse)%F{white}
 $ '
