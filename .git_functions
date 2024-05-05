@@ -16,20 +16,26 @@ function git-create-branch {
 # $1 = Repo Name
 function git-create-repo {
   if [[ ! -z ${1} ]]; then
+    echo -n "Creating Repo ${1}..."
+
     mkdir ./${1}
     cd ./${1}
-    touch ./README.md
+    touch ./README.md &> /dev/null 
 
-    git init
-    git checkout -b develop
-    git add .
-    git commit -m "Repo Creation"
+    git init &> /dev/null 
+    git checkout -b develop &> /dev/null 
+    git add . &> /dev/null 
+    git commit -m "Repo Creation" &> /dev/null 
 
-    gh repo create ${1} --private --source=. --remote=origin
+    gh repo create ${1} --private --source=. --remote=origin &> /dev/null 
     
-    git push -u origin develop
+    git push -u origin develop &> /dev/null
 
     cd ..
+    
+    gh repo view ${1} &> /dev/null
+ 
+    _print-cmd-status
   else
     echo "[ERROR] No Parameter Passed To Function."
   fi
