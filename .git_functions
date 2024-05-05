@@ -12,6 +12,29 @@ function git-create-branch {
   fi
 }
 
+# Create A New Repository And Push The Develop Branch
+# $1 = Repo Name
+function git-create-repo {
+  if [[ ! -z ${1} ]]; then
+    mkdir ./${1}
+    cd ./${1}
+    touch ./README.md
+
+    git init
+    git checkout -b develop
+    git add .
+    git commit -m "Repo Creation"
+
+    gh repo create ${1} --private --source=. --remote=origin
+    
+    git push -u origin develop
+
+    cd ..
+  else
+    echo "[ERROR] No Parameter Passed To Function."
+  fi
+}
+
 # Commit All Changed Files To Git
 # $1 = Commit Message
 function git-commit {
