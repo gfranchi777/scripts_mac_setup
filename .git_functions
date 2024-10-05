@@ -12,21 +12,33 @@ function git-create-branch {
   fi
 }
 
-# Create A Local Repository And Develop Branch
+# Create A New Repository And Push The Develop Branch
+# $1 = Repo Name
 function git-create-repo {
   if [[ ! -z ${1} ]]; then
-    mkdir ${1}
-    chmod 700 ${1}
-    cd ./${1}
+    echo -n "Creating Repo ${1}..."
 
-    git init ./${1}
-    git add ./${1}/.
-    git commit -m "Initial Commit"
-    gh repo create <repository-name> --private --source=. --remote=origin
-    git push -u origin develop
+    mkdir ./${1}
+    cd ./${1}
+    touch ./README.md &> /dev/null 
+
+    git init &> /dev/null 
+    git checkout -b develop &> /dev/null 
+    git add . &> /dev/null 
+    git commit -m "Repo Creation" &> /dev/null 
+
+    gh repo create ${1} --private --source=. --remote=origin &> /dev/null 
+    
+    git push -u origin develop &> /dev/null
 
     cd ..
-  fi 
+    
+    gh repo view ${1} &> /dev/null
+ 
+    _print-cmd-status
+  else
+    echo "[ERROR] No Parameter Passed To Function."
+  fi
 }
 
 # Commit All Changed Files To Git
