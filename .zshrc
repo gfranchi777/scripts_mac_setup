@@ -35,4 +35,3 @@ cls
 # Get a random quote from the ~/.quotes file
 # and display it to the terminal
 get-random-quote
-
