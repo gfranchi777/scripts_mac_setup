@@ -12,6 +12,23 @@ function git-create-branch {
   fi
 }
 
+# Create A Local Repository And Develop Branch
+function git-create-repo {
+  if [[ ! -z ${1} ]]; then
+    mkdir ${1}
+    chmod 700 ${1}
+    cd ./${1}
+
+    git init ./${1}
+    git add ./${1}/.
+    git commit -m "Initial Commit"
+    gh repo create <repository-name> --private --source=. --remote=origin
+    git push -u origin develop
+
+    cd ..
+  fi 
+}
+
 # Commit All Changed Files To Git
 # $1 = Commit Message
 function git-commit {
@@ -59,7 +76,8 @@ function git-show-local {
     for repo_dir in ${git_repo_dirs}; do
       echo ""
       echo "  Repo: $(basename ${repo_dir})"
-      local_branches=$(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | sed -e 's/^\[branch \"//g' | sed -e 's/\"\]//g')
+      local_branches=$(grep -E '^\[branch.*\]$' ${repo_dir}/.git/config | \
+                       sed -e 's/^\[branch \"//g' | sed -e 's/\"\]//g')
       for branch_name in ${local_branches[@]}; do
         echo "    Branch: ${branch_name}"
       done
@@ -118,7 +136,8 @@ function git-update-branches {
   mkdir -p "${logs_dir}"
 
   for git_repo_dir in "${GIT_REPO_DIRS[@]}"; do
-    local git_project_dirs=($(find "${git_repo_dir}" -maxdepth 1 -type d ! -path "${git_repo_dir}" -prune))
+    local git_project_dirs=($(find "${git_repo_dir}" -maxdepth 1 -type d \
+                                   ! -path "${git_repo_dir}" ! -name ".*" -prune))
 
     if [[ ${1} == "project" ]]; then
       local project_index=1
@@ -135,7 +154,8 @@ function git-update-branches {
       echo -n "Enter A Project Index [1 - ${#git_project_dirs[@]}]: "
       read selected_project_index
 
-      if [[ ${selected_project_index} -lt 1 || ${selected_project_index} -gt ${#git_project_dirs[@]} ]]; then
+      if [[ ${selected_project_index} -lt 1 || ${selected_project_index} -gt \
+        ${#git_project_dirs[@]} ]]; then
         echo "[ERROR] Invalid project Index Selected"
         return 1
       else
@@ -151,7 +171,8 @@ function git-update-branches {
       echo "${YELLOW}Project: ${WHITE}${project_name}"
 
       if [[ -d "${project_dir}" && -n "$(ls -A "${project_dir}")" ]]; then
-        local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d ! -path "${project_dir}" -prune))
+        local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d \
+                               ! -path "${project_dir}" ! -name ".*" -prune))
       else
         git_repo_dirs=()
       fi
@@ -168,7 +189,8 @@ function git-update-branches {
           continue
         fi
 
-        local_branches=($(git -C "${repo_dir}" for-each-ref --format '%(refname:short)' refs/heads/))
+        local_branches=($(git -C "${repo_dir}" for-each-ref --format \
+                          '%(refname:short)' refs/heads/))
         
         for local_branch in "${local_branches[@]}"; do
           echo "      ${YELLOW}Branch${WHITE}: ${local_branch}"
