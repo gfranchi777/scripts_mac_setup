@@ -208,8 +208,8 @@ function get-random-quote {
   if [[ ${status_code} -eq 200 ]]; then
     response=$(curl -s ${api_uri})
 
-    echo ${response} | jq -r '.[] | "\(.q)"'
-    echo ${response} | jq -r '.[] | "- \(.a)"'
+    echo ${response} | jq -r '.[] | "\(.q)"' | tee -a ~/.quotes
+    echo ${response} | jq -r '.[] | "- \(.a)"' | tee -a ~/.quotes
   else
     local quote_file=~/.quotes
     local quote_index=$(shuf -i 1-$(sed -n '$=' ${quote_file}) -n 1)
@@ -221,6 +221,8 @@ function get-random-quote {
     sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | \
       fold -sw $(echo -n ${PS1} | wc -m)
     fi
+  
+  git-push "Update Quote File" &> /dev/null
 }
 
 # Generate A Certificate Signing Request From A Java Keystore
