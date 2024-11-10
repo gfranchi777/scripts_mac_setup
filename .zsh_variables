@@ -2,7 +2,7 @@
 export BREW_HOME=/opt/homebrew
 
 # Python Variabls
-export PYTHONPATH=/Users/wpnx777/Repos/Python
+export PYTHONPATH=/Users/wpnx777/Repos/python
 
 #OpenSSL Variables
 export OPENSSL_HOME=${BREW_HOME}/opt/openssl
@@ -10,9 +10,6 @@ export OPENSSL_HOME=${BREW_HOME}/opt/openssl
 # Maven Variables
 export M2_HOME=${BREW_HOME}/opt/maven
 export MAVEN_OPTS="-Xms256m -Xmx512m"
-
-# Homebrew Variables
-export PATH=${PATH}:/opt/homebrew/bin
 
 # Java Variables
 export JDK_HOME=/Library/Java/JavaVirtualMachines/openjdk-21.jdk
@@ -58,7 +55,8 @@ export RED="\033[0;31m"
 export WHITE="\033[0;29m"
 export YELLOW="\033[0;33m"
 
-export PATH="${JDK_HOME}/bin:${M2_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
+export PATH="${BREW_HOME}/bin:${JDK_HOME}/bin:${M2_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
+
 setopt PROMPT_SUBST
 export PROMPT='%F{red}[%n:%m]%F{green}[%~]%F{yellow}$(git-branch-parse)%F{white}
 $ '

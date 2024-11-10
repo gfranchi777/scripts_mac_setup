@@ -3,6 +3,16 @@ function git-branch-parse {
   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/[\1]/'
 }
 
+# Commit All Changed Files To Git
+# $1 = Commit Message
+function git-commit {
+  if [[ ! -z ${1} ]]; then
+    git add .
+    git commit -S -m "${1}"
+  else
+    echo "[ERROR] No Commit Message Specified."
+  fi
+}
 # Create A Local Branch And Push It To The Remote Repository
 # $1 = Branch Name
 function git-create-branch {
@@ -23,7 +33,7 @@ function git-create-repo {
     touch ./README.md &> /dev/null 
 
     git init &> /dev/null 
-    git checkout -b develop &> /dev/null 
+    git checkout -b develop &> /dev/null
     git add . &> /dev/null 
     git commit -m "Repo Creation" &> /dev/null 
 
@@ -38,17 +48,6 @@ function git-create-repo {
     _print-cmd-status
   else
     echo "[ERROR] No Parameter Passed To Function."
-  fi
-}
-
-# Commit All Changed Files To Git
-# $1 = Commit Message
-function git-commit {
-  if [[ ! -z ${1} ]]; then
-    git add .
-    git commit -S -m "${1}"
-  else
-    echo "[ERROR] No Commit Message Specified."
   fi
 }
 
@@ -180,7 +179,7 @@ function git-update-branches {
       local project_log_dir="${logs_dir}/${project_name}"
       mkdir -p "${project_log_dir}"
 
-      echo "${YELLOW}Project: ${WHITE}${project_name}"
+      out_project="${YELLOW}Project: ${WHITE}${project_name}"
 
       if [[ -d "${project_dir}" && -n "$(ls -A "${project_dir}")" ]]; then
         local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d \
@@ -193,33 +192,39 @@ function git-update-branches {
         local repo_name=$(basename "${repo_dir}")
         local log_file="${project_log_dir}/${repo_name}.log"
 
-        echo "" 
-        echo "   ${YELLOW}Repo: ${WHITE}${repo_name}"
+        local out_repo="${YELLOW}Repo: ${WHITE}${repo_name}"
 
         if [[ ! -d "${repo_dir}/.git" ]]; then
-          echo "      ${RED}Not a Git repository${WHITE}"
+          local out_branch="${YELLOW}Branch${WHITE}: ${RED}------- "
+          local out_status="${YELLOW}Status${WHITE}: ${RED}Not a Git repository${WHITE}."
+
+          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" "${YELLOW}" "${out_project}" \
+                                                     "${YELLOW}" "${out_repo}" \
+                                                     "${YELLOW}" "${out_branch}" \
+                                                     "${YELLOW}" "${out_status}"
           continue
         fi
 
-        local_branches=($(git -C "${repo_dir}" for-each-ref --format \
-                          '%(refname:short)' refs/heads/))
+        local local_branches=($(git -C "${repo_dir}" for-each-ref --format '%(refname:short)' refs/heads/))
         
         for local_branch in "${local_branches[@]}"; do
-          echo "      ${YELLOW}Branch${WHITE}: ${local_branch}"
-          echo -n "      ${YELLOW}Status${WHITE}: "
+          local out_branch="${YELLOW}Branch${WHITE}: ${local_branch}"
           
           git -C "${repo_dir}" switch "${local_branch}" &> /dev/null
           git -C "${repo_dir}" pull &>> "${log_file}"
           
           if [[ $? -eq 0 ]]; then
-            echo "${GREEN}Success${WHITE}"
+            local out_status="${YELLOW}Status${WHITE}: ${GREEN}Branch Update Success${WHITE}."
           else
-            echo "${RED}Failure${WHITE}"
-            echo "      ${YELLOW}Log   ${WHITE}: ${project_log_dir}/${repo_name}.log"
+            local out_status="${YELLOW}Status${WHITE}: ${RED}Branch Update Failure${WHITE}."
           fi
+
+          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" "${YELLOW}" "${out_project}" \
+                                                     "${YELLOW}" "${out_repo}" \
+                                                     "${YELLOW}" "${out_branch}" \
+                                                     "${YELLOW}" "${out_status}"
         done
       done
-      echo ""
     done
   done
 }

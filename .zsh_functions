@@ -151,23 +151,6 @@ function cache-all-keys {
   echo ""
 }
 
-# Export The Jira Rest API Token
-function cache-jira-api-token {
-  _print-header "Exporting Jira Rest API Token"
-  
-  echo -n "Exporting Jira API Token..."
-
-  #export JIRA_API_TOKEN=$(security find-generic-password -w -s "jira-rest-api-token" ${FRAG002_KEYCHAIN})
-
-  if [[ -n ${JIRA_API_TOKEN} ]]; then
-    echo "${GREEN}Completed${WHITE}."
-  else
-    echo "${RED}Failed${WHITE}."
-  fi
-
-  echo ""
-}
-
 # Search starting at the current directory for a text pattern inside any files
 # in the current directory or it's sub directories
 # $1 = Search Pattern
@@ -178,24 +161,6 @@ function find-in-files {
   fi
 
   find . -type f -exec grep -i ${1} '{}' \; -print
-}
-
-# Cache SSH and GPG Keys As Well As A Token Used For Jira API Calls
-function setup-cache {
-  keychain-unlock
-
-  cache-all-keys
-
-  keychain-lock
-}
-
-# Automate The Daily Update Tasks
-function setup-env {
-  setup-cache
-
-  brew-update
-  
-  git-update-branches all
 }
 
 # Get a random quote from an online api.
@@ -230,22 +195,6 @@ function get-random-quote {
 # $2 = Certificate Alias
 function gen-csr {
   keytool -certreq -keystore ${1} -alias ${2} -file ${2}.csr
-}
-
-# Make An API Call To Jira
-# $1 = API To Call
-function jira-api {
-   local url_base=''
-
-   if [[ -z ${1} ]]; then
-     #ERROR
-     return 1
-   fi
-
-   curl --request GET \
-        --url "${url_base}/${1}" \
-        --header 'Accept: application/json' \
-        --header "Authorization: Bearer ${JIRA_API_TOKEN}"\
 }
 
 # Lock A MacOs Keychain
@@ -307,32 +256,22 @@ function list-aliases-and-functions() {
   printf "\n"
 }
 
-# Map Personal Drive
-function map-personal-drive {
-  _print-header "Mapping Personal Network Drive"
+# Cache SSH and GPG Keys As Well As A Token Used For Jira API Calls
+function setup-cache {
+  keychain-unlock
 
-  if [[ -z $(mount | grep $(basename ${LEGACY_PERSONAL_DRIVE})) ]]; then
-    open ${LEGACY_PERSONAL_DRIVE}
-    _print-cmd-status
-  else
-    echo "Drive Already Mapped."
-  fi
+  cache-all-keys
 
-  echo ""
+  keychain-lock
 }
 
-# Login To Vault And Get A Token
-function vault-login {
-  export VAULT_TOKEN=`vault login -token-only \
-                                  -method=ldap username=${SHORT_ID}`
-  
-  echo -n "Logging into Vault (${VAULT_ADDR})..."
+# Automate The Daily Update Tasks
+function setup-env {
+  setup-cache
 
-  if [[ -n ${VAULT_TOKEN} ]]; then
-    echo "${GREEN}Completed${WHITE}."
-  else
-    echo "${RED}Failed${WHITE}."
-  fi
+  brew-update
+  
+  git-update-branches all
 }
 
 # List All Certificate Entries In A Java Keystore
