@@ -133,7 +133,7 @@ function git-switch {
 }
 
 # Update Branches In Git Repos
-# $1 = all | project
+# $1 = all
 function git-update-branches {
   _print-header "Updating Local Git Branches"
 
@@ -150,30 +150,6 @@ function git-update-branches {
     local git_project_dirs=($(find "${git_repo_dir}" -maxdepth 1 -type d \
                                    ! -path "${git_repo_dir}" ! -name ".*" -prune))
 
-    if [[ ${1} == "project" ]]; then
-      local project_index=1
-
-      echo "Project List:"
-      echo ""
-
-      for project_name in "${git_project_dirs[@]}"; do
-        echo "   ${project_index}: $(basename "${project_name}")"
-        (( project_index++ ))
-      done
-
-      echo ""
-      echo -n "Enter A Project Index [1 - ${#git_project_dirs[@]}]: "
-      read selected_project_index
-
-      if [[ ${selected_project_index} -lt 1 || ${selected_project_index} -gt \
-        ${#git_project_dirs[@]} ]]; then
-        echo "[ERROR] Invalid project Index Selected"
-        return 1
-      else
-        git_project_dirs=("${git_project_dirs[${selected_project_index}-1]}")
-      fi
-    fi
-
     for project_dir in "${git_project_dirs[@]}"; do
       local project_name=$(basename "${project_dir}")
       local project_log_dir="${logs_dir}/${project_name}"
@@ -185,7 +161,7 @@ function git-update-branches {
         local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d \
                                ! -path "${project_dir}" ! -name ".*" -prune))
       else
-        git_repo_dirs=()
+        continue
       fi
 
       for repo_dir in "${git_repo_dirs[@]}"; do
