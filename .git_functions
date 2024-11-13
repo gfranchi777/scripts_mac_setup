@@ -219,10 +219,10 @@ function git-update-branches {
             local out_status="${YELLOW}Status${WHITE}: ${RED}Branch Update Failure${WHITE}."
           fi
 
-          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" "${YELLOW}" "${out_project}" \
-                                                     "${YELLOW}" "${out_repo}" \
-                                                     "${YELLOW}" "${out_branch}" \
-                                                     "${YELLOW}" "${out_status}"
+          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" " " "${out_project}" \
+                                                     " " "${out_repo}" \
+                                                     " " "${out_branch}" \
+                                                     " " "${out_status}"
         done
       done
     done
