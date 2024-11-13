@@ -198,10 +198,10 @@ function git-update-branches {
           local out_branch="${YELLOW}Branch${WHITE}: ${RED}------- "
           local out_status="${YELLOW}Status${WHITE}: ${RED}Not a Git repository${WHITE}."
 
-          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" "${YELLOW}" "${out_project}" \
-                                                     "${YELLOW}" "${out_repo}" \
-                                                     "${YELLOW}" "${out_branch}" \
-                                                     "${YELLOW}" "${out_status}"
+          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" " " "${out_project}" \
+                                                     " " "${out_repo}" \
+                                                     " " "${out_branch}" \
+                                                     " " "${out_status}"
           continue
         fi
 
