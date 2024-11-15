@@ -190,9 +190,9 @@ function git-update-branches {
           git -C "${repo_dir}" pull &>> "${log_file}"
           
           if [[ $? -eq 0 ]]; then
-            local out_status="${YELLOW}Status${WHITE}: ${GREEN}Branch Update Success${WHITE}."
+            local out_status="${YELLOW}Status${WHITE}: ${GREEN}Success${WHITE}."
           else
-            local out_status="${YELLOW}Status${WHITE}: ${RED}Branch Update Failure${WHITE}."
+            local out_status="${YELLOW}Status${WHITE}: ${RED}Failure${WHITE}."
           fi
 
           printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" " " "${out_project}" \
