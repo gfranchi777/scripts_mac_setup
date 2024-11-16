@@ -1,6 +1,6 @@
 # Get The Name Of The Branch Contained In The Current Folder
 function git-branch-parse {
-  git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/[\1]/'
+  git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/%F{8}[%F{3}\1%F{8}]/'
 }
 
 # Commit All Changed Files To Git
@@ -155,7 +155,7 @@ function git-update-branches {
       local project_log_dir="${logs_dir}/${project_name}"
       mkdir -p "${project_log_dir}"
 
-      out_project="${YELLOW}Project: ${WHITE}${project_name}"
+      out_project="${YELLOW}Project${WHITE}: ${project_name}"
 
       if [[ -d "${project_dir}" && -n "$(ls -A "${project_dir}")" ]]; then
         local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d \
@@ -168,7 +168,7 @@ function git-update-branches {
         local repo_name=$(basename "${repo_dir}")
         local log_file="${project_log_dir}/${repo_name}.log"
 
-        local out_repo="${YELLOW}Repo: ${WHITE}${repo_name}"
+        local out_repo="${YELLOW}Repo${WHITE}: ${repo_name}"
 
         if [[ ! -d "${repo_dir}/.git" ]]; then
           local out_branch="${YELLOW}Branch${WHITE}: ${RED}------- "
