@@ -13,44 +13,6 @@ function git-commit {
     echo "[ERROR] No Commit Message Specified."
   fi
 }
-# Create A Local Branch And Push It To The Remote Repository
-# $1 = Branch Name
-function git-create-branch {
-  if [[ ! -z ${1} ]]; then
-    git checkout -b \"${1}\"
-    git push --set-upstream origin \"${1}\"
-  fi
-}
-
-# Create A New Repository And Push The Develop Branch
-# $1 = Repo Name
-function git-create-repo {
-  if [[ ! -z ${1} ]]; then
-    echo -n "Creating Repo ${1}..."
-
-    mkdir ./${1}
-    cd ./${1}
-    touch ./README.md &> /dev/null 
-
-    git init &> /dev/null 
-    git checkout -b develop &> /dev/null
-    git add . &> /dev/null 
-    git commit -m "Repo Creation" &> /dev/null 
-
-    gh repo create ${1} --private --source=. --remote=origin &> /dev/null 
-    
-    git push -u origin develop &> /dev/null
-
-    cd ..
-    
-    gh repo view ${1} &> /dev/null
- 
-    _print-cmd-status
-  else
-    echo "[ERROR] No Parameter Passed To Function."
-  fi
-}
-
 # Delete A Branch Locally And Remotely
 # $1 = Branch Name
 function git-delete-branch {
@@ -97,39 +59,6 @@ function git-show-local {
   done
 
   cd ${start_dir}
-}
-
-# Switch Branch And Pull From Remote To Update It
-# $1 = Branch Name
-function git-switch {
-  branch_name=${1}
-
-  if [[ ! -z ${branch_name} ]]; then
-    git branch | grep -i ${branch_name} > /dev/null 2>&1
-
-    if [[ ${?} -eq 0 ]]; then
-      git switch ${branch_name} > /dev/null 2>@1 | grep -i "behind" > /dev/null 2>&1
-
-      echo "Switched Branch To '${branchName}'."
-
-      if [[ ${?} -eq 0 ]]; then
-        echo "Local Branch ${branch_name} Is Up To Date With Remote."
-      else
-        echo "Local Branch '${branch_name}' Is Behind Remote. Pulling Changes From Remote."
-        git pull > /dev/null 2>&1
-
-        if [[ ${?} -eq 0 ]]; then
-          echo "Pull Successful."
-        else
-          echo "Pull Failed."
-        fi
-      fi
-    else
-      echo "Branch ${branch_name} Does Not Exist Locally."
-    fi
-  else
-    echo "No Branch Name Specified to git-switch."
-  fi
 }
 
 # Update Branches In Git Repos
