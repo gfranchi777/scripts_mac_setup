@@ -13,22 +13,23 @@ function _print-cmd-status {
 function _print-header {
   local header_char="*"
   local header_cols=65
-  local printed_header_char=0
+  local text=" ${1} "  # Add spaces around the text for better formatting
+  local text_length=${#text}
+  local side_length=$(( (header_cols - text_length) / 2 ))
 
   echo -n "${YELLOW}"
-
-  while [[ ${printed_header_char} -lt ${header_cols} ]]; do
-    echo -n ${header_char}
-    ((printed_header_char++))
+  
+  # Print left side
+  for ((i=0; i<side_length; i++)); do
+    echo -n "${header_char}"
   done
   
-  echo "\n${1}"
-
-  printed_header_char=0
-
-  while [[ ${printed_header_char} -lt ${header_cols} ]]; do
-    echo -n ${header_char}
-    printed_header_char=$[${printed_header_char}+1]
+  # Print centered text
+  echo -n "${text}"
+  
+  # Print right side (handle odd numbers with remaining length)
+  for ((i=0; i<(header_cols - side_length - text_length); i++)); do
+    echo -n "${header_char}"
   done
 
   echo "${WHITE}\n"
