@@ -51,36 +51,6 @@ function aws-vault-add {
   fi
 }
 
-# Decode A Base 64 Input And Save It As A Clear Text File
-# $1 = File To Decode
-function base64-decode {
-  if [[ -f ${1} ]]; then
-    echo "Decoding Base 64 File ${1}."
-
-    file_name=${1}
-    
-    if [[ ${file_name##*.} == "b64" ]]; then
-      file_name=${file_name%.*}.clear
-    fi
-
-    cat ${1} | base64 -d  > ${file_name}
-
-    echo "Saved Decoded File As ${file_name}"
-  fi
-}
-
-# Take A Clear Text Input And Save It As A Base 64 Encoded File
-# $1 = File To Encode
-function base64-encode {
-  if [[ -f ${1} ]]; then
-    echo "Encoding File ${1} To Base 64."
-
-    base64 -i ${1} > ${1}.b64
-
-    echo "Saved Encoded File As ${1}.b64"
-  fi
-}
-
 # Update / Upgrade Homebrew
 function brew-update {
   _print-header "Updating HomeBrew Apps"
@@ -191,13 +161,6 @@ function get-random-quote {
   git-push "Update Quote File" &> /dev/null
 }
 
-# Generate A Certificate Signing Request From A Java Keystore
-# $1 = Keystore Name
-# $2 = Certificate Alias
-function gen-csr {
-  keytool -certreq -keystore ${1} -alias ${2} -file ${2}.csr
-}
-
 # Lock A MacOs Keychain
 # $1 = The Name Of The Keychain To Lock
 function keychain-lock {
@@ -273,10 +236,4 @@ function setup-env {
   brew-update
   
   git-update-branches all
-}
-
-# List All Certificate Entries In A Java Keystore
-# $1 = Keystore File
-function view-jks-certificate-entries {
-  openssl x509 -in ${1} -noout -text | head -11
 }
