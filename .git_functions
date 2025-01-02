@@ -75,6 +75,8 @@ function git-update-branches {
   local logs_dir=${HOME}/.git-update
   mkdir -p "${logs_dir}"
 
+  printf "%b%-47b %b%-50b %b%-30b %b%-30b\n" " " "${YELLOW}Project" " " "Repo" " " "Branch" " " "Status${WHITE}"
+  
   for git_repo_dir in "${GIT_REPO_DIRS[@]}"; do
     local git_project_dirs=($(find "${git_repo_dir}" -maxdepth 1 -type d \
                                    ! -path "${git_repo_dir}" ! -name ".*" -prune))
@@ -83,8 +85,6 @@ function git-update-branches {
       local project_name=$(basename "${project_dir}")
       local project_log_dir="${logs_dir}/${project_name}"
       mkdir -p "${project_log_dir}"
-
-      out_project="${YELLOW}Project${WHITE}: ${project_name}"
 
       if [[ -d "${project_dir}" && -n "$(ls -A "${project_dir}")" ]]; then
         local git_repo_dirs=($(find "${project_dir}" -maxdepth 1 -type d \
@@ -97,37 +97,27 @@ function git-update-branches {
         local repo_name=$(basename "${repo_dir}")
         local log_file="${project_log_dir}/${repo_name}.log"
 
-        local out_repo="${YELLOW}Repo${WHITE}: ${repo_name}"
+        local out_repo="${repo_name}"
 
         if [[ ! -d "${repo_dir}/.git" ]]; then
-          local out_branch="${YELLOW}Branch${WHITE}: ${RED}------- "
-          local out_status="${YELLOW}Status${WHITE}: ${RED}Not a Git repository${WHITE}."
-
-          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" " " "${out_project}" \
-                                                     " " "${out_repo}" \
-                                                     " " "${out_branch}" \
-                                                     " " "${out_status}"
           continue
         fi
 
         local local_branches=($(git -C "${repo_dir}" for-each-ref --format '%(refname:short)' refs/heads/))
         
         for local_branch in "${local_branches[@]}"; do
-          local out_branch="${YELLOW}Branch${WHITE}: ${local_branch}"
+          local branch_name="${local_branch}"
           
           git -C "${repo_dir}" switch "${local_branch}" &> /dev/null
           git -C "${repo_dir}" pull &>> "${log_file}"
           
           if [[ $? -eq 0 ]]; then
-            local out_status="${YELLOW}Status${WHITE}: ${GREEN}Success${WHITE}."
+            local update_status="${GREEN}Success${WHITE}"
           else
-            local out_status="${YELLOW}Status${WHITE}: ${RED}Failure${WHITE}."
+            local update_status="${RED}Failure${WHITE}"
           fi
 
-          printf "%b%-30b %b%-50b %b%-30b %b%-30b\n" " " "${out_project}" \
-                                                     " " "${out_repo}" \
-                                                     " " "${out_branch}" \
-                                                     " " "${out_status}"
+          printf "%b%-40b %b%-50b %b%-30b %b%-30b\n" " " "${project_name}" " " "${repo_name}" " " "${branch_name}" " " "${update_status}"
         done
       done
     done
