@@ -5,43 +5,29 @@ export BREW_HOME=/opt/homebrew
 export PYTHONPATH=/Users/wpnx777/Repos/python
 
 #OpenSSL Variables
-export OPENSSL_HOME=${BREW_HOME}/opt/openssl
-
-# Maven Variables
-export M2_HOME=${BREW_HOME}/opt/maven
-export MAVEN_OPTS="-Xms256m -Xmx512m"
+export OPENSSL_HOME=${BREW_HOME}/bin/openssl
 
 # Java Variables
-export JDK_HOME=/Library/Java/JavaVirtualMachines/openjdk-21.jdk
-export JAVA_HOME=$(/usr/libexec/java_home)
-
-# Terraform Variables
-TF_WORKSPACE_DEV=dev
-TF_WORKSPACE_STG=stg
-TF_WORKSPACE_PRD=prd
-
-export TF_WORKSPACE=${TF_WORKSPACE_DEV}
-
-# AWS Vault Variables
-export AWS_VAULT_BACKEND=keychain
-
-# AWS Variables
-AWS_REGION_PRIMARY=ca-central-1
-AWS_REGION_DR=eu-west-1
-
-export AWS_REGION=${AWS_REGION_PRIMARY}
+export JDK_HOME=${BREW_HOME}/opt/openjdk
+export JAVA_HOME=${JDK_HOME}
 
 # GIT Variables
 export GIT_HOSTS=(github.com)
-export GIT_EMAILS=(wpnx777@wpnx777.com)
-export GIT_SSH_KEYS=(~/.ssh/wpnx777.id_rsa)
+export GIT_EMAILS=()
+export GIT_SSH_KEYS=()
 export GIT_REPO_DIRS=~/Repos
 
 # Personal Variables
-export KEYCHAINS=(~/Library/Keychains/wpnx777.keychain-db)
 export LAST_SETUP_ENV=~/.last-setup-env
 
-# Terminal Variables
+# Terminal Variables - Color
+export CLICOLOR=1
+export GREEN="\033[0;32m"
+export RED="\033[0;31m"
+export WHITE="\033[0;29m"
+export YELLOW="\033[0;33m"
+
+# Terminal Variables - History
 export HISTSIZE=10000
 export SAVEHIST=10000
 export HISTFILE=~/.zshistory
@@ -49,14 +35,16 @@ setopt INC_APPEND_HISTORY
 setopt HIST_IGNORE_DUPS
 setopt EXTENDED_HISTORY
 
-export CLICOLOR=1
-export GREEN="\033[0;32m"
-export RED="\033[0;31m"
-export WHITE="\033[0;29m"
-export YELLOW="\033[0;33m"
+# Terminal Variables - Path
+export PATH="${BREW_HOME}/bin:${JDK_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
 
-export PATH="${BREW_HOME}/bin:${JDK_HOME}/bin:${M2_HOME}/bin:${OPENSSL_HOME}/bin:${PATH}"
-
+# Terminal Variables - Prompt
+set termguicolors
 setopt PROMPT_SUBST
-export PROMPT='%F{8}[%F{1}%n%F{8}:%F{1}%m%F{8}][%F{2}%~%F{8}]$(git-branch-parse)
-%F{8}$ %F{7}'
+
+autoload -Uz vcs_info
+precmd() { vcs_info }
+zstyle ':vcs_info:git*' formats '%F{white} : %F{yellow}%b%F{white}'
+
+PROMPT='$(build-prompt)
+%F{white}> %f'

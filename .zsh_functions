@@ -2,9 +2,9 @@
 # Command Exit Status.
 function _print-cmd-status {
   if [[ ${?} -eq 0 ]]; then
-    echo "${GREEN}Completed${WHITE}"
+    echo "✅"
   else
-    echo "${RED}Failed${WHITE}"
+    echo "❌"
   fi
 }
 
@@ -13,7 +13,7 @@ function _print-cmd-status {
 function _print-header {
   local header_char="*"
   local header_cols=65
-  local text=" ${1} "  # Add spaces around the text for better formatting
+  local text=" ${1} "
   local text_length=${#text}
   local side_length=$(( (header_cols - text_length) / 2 ))
 
@@ -35,22 +35,6 @@ function _print-header {
   echo "${WHITE}\n"
 }
 
-# Create An Entry In aws-vault
-# $1 = Name Of New AWS Vault Entry
-function aws-vault-add {
-  if [[ ! -z ${1} ]]; then
-    echo "Adding entry ${1} to aws-vault"
-    aws-vault add ${1}
-    entry_added=`aws-vault list | grep -i "${1}"`
-
-    if [[ ! -z ${entry_added} ]]; then
-      echo "Entry ${1} was added to aws-vault"
-    else
-      echo "[ERROR] Entry ${1} was not added to aws-vault"
-    fi
-  fi
-}
-
 # Update / Upgrade Homebrew
 function brew-update {
   _print-header "Updating HomeBrew Apps"
@@ -58,8 +42,48 @@ function brew-update {
   brew update
   brew upgrade
   brew upgrade --cask --greedy
+  brew cleanup
 
   echo ""
+}
+
+# Creare The Prompt
+function build-prompt {
+  if [[ $(whoami) == ${USER_NAME} ]]; then
+    local user_name="me"
+  else
+    local user_name=$(whoami)
+  fi
+
+  if [[ $(hostname) == ${HOST_NAME} ]]; then
+    local host_name="local"
+  else
+    local host_name=$(hostname)
+  fi
+
+  local day=$(date '+%a %b %d %Y')
+  local time=$(date '+%H:%M')
+
+  # Red Prompt
+  local left="%F{white}[%F{red}${user_name}%F{white}@%F{red}${host_name}%F{white} : %F{red}%~%F{white}${vcs_info_0_}%F{white}] "
+  local right=" [%F{red}${day}%F{white}, %F{red}${time}%F{white}]"
+
+  local rendered_left=$(print -P "${left}")
+  local rendered_right=$(print -P "${right}")
+
+  local plain_left=$(echo "${rendered_left}" | sed 's/\x1b\[[0-9;]*m//g')
+  local plain_right=$(echo "${rendered_right}" | sed 's/\x1b\[[0-9;]*m//g')
+
+  local total_width=$(tput cols)
+  local fill_len=$(( total_width - ${#plain_left} - ${#plain_right} ))
+
+  if [[ ${fill_len} -lt 0 ]]; then
+    fill_len=0
+  fi
+
+  local fill=$(printf '%*s' ${fill_len} '' | tr ' ' '-')
+
+  print -P "${left}${fill}${right}"
 }
 
 # Cache GPG And SSH Keys Used For Bitbucket
@@ -70,51 +94,15 @@ function cache-all-keys {
 
   eval $(ssh-agent) > /dev/null 2>&1
 
-  gpgconf --kill all
-
   for git_host in ${GIT_HOSTS}; do
-    #GPG Key Caching
-    #Fetch GPG Key Passphrase From Keychain 
-    local gpg_key_passphrase=$(security find-generic-password -w -s "${git_host}_gpg-key" ${GIT_KEYCHAIN})
-
-    #Get GPG Fingerprint 
-    local fingerprint=($(gpg --list-keys --fingerprint -a "${GIT_EMAILS[${host_index}]}"| sed -n '2 p' | awk '{ gsub(/ /,""); print }'))
-
-    echo -n "Caching ${git_host} GPG Key..."
-
-    touch /tmp/tmp_gpg.txt
-
-    gpg --encrypt \
-        --pinentry-mode=loopback \
-        --batch \
-        --sign \
-        --yes \
-        --default-key ${fingerprint} \
-        --passphrase ${gpg_key_passphrase} \
-        --recipient ${GIT_EMAILS[${host_index}]} \
-        /tmp/tmp_gpg.txt &> /dev/null
-
-    _print-cmd-status
-
-    rm /tmp/tmp_gpg.txt
-
     #SSH Key Caching
     #Fetch SSH Key Passphrase From Keychain
-    export SSH_KEY_PASS=$(security find-generic-password -w -s "${git_host}_ssh-key" ${GIT_KEYCHAIN})
-
     echo -n "Caching ${git_host} SSH Key..."
     
     #Cache SSH Key
-    local ssh_key=$(openssl rsa -in ${GIT_SSH_KEYS[${host_index}]} -passin env:SSH_KEY_PASS 2> /dev/null)
-    ssh-add -q - <<< "${ssh_key}"
+    ssh-add "${GIT_SSH_KEYS[${host_index}]}" &> /dev/null
 
     _print-cmd-status
-    
-    # Cleanup
-    unset fingerprint
-    unset gpg_key_passphrase
-    unset SSH_KEY_PASS
-    unset ssh_key
     
     ((host_index++))
   done
@@ -135,103 +123,30 @@ function find-in-files {
 }
 
 # Get a random quote from an online api.
-# If the api call fails, then default to the local ~/.quotes file.
-function get-random-quote {
+function get-online-quote {
   local api_uri="https://zenquotes.io/api/random"
-
   local status_code=$(curl --write-out %{http_code} --silent --output /dev/null ${api_uri})
-  
+
   if [[ ${status_code} -eq 200 ]]; then
-    response=$(curl -s ${api_uri})
-
-    echo ${response} | jq -r '.[] | "\(.q)"' | tee -a ~/.quotes
-    echo ${response} | jq -r '.[] | "- \(.a)"' | tee -a ~/.quotes
-  else
-    local quote_file=~/.quotes
-    local quote_index=$(shuf -i 1-$(sed -n '$=' ${quote_file}) -n 1)
-
-    if [[ $(expr ${quote_index} % 2) -eq 0 ]]; then
-      ((quote_index--))
-    fi
-  
-    sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | \
-      fold -sw $(echo -n ${PS1} | wc -m)
-    fi
-  
-  git-push "Update Quote File" &> /dev/null
-}
-
-# Lock A MacOs Keychain
-# $1 = The Name Of The Keychain To Lock
-function keychain-lock {
-  _print-header "Locking Keychains"
-
-  for keychain in ${KEYCHAINS[@]}; do
-    echo -n "Locking keychain $(basename ${keychain})..."
-
-    security lock-keychain ${keychain}
-
-    _print-cmd-status
-  done
-
-  echo ""
-}
-
-# Unlock A MacOS Keychain
-function keychain-unlock {
-  echo -n "Keychain Unlock Password: "
-  read -s keychain_password
-  echo "\n"
-
-  if [[ -n ${keychain_password} ]]; then
-    _print-header "Unlocking Keychains"
-    
-    for keychain in ${KEYCHAINS[@]}; do
-      echo -n "Unlocking keychain $(basename ${keychain})..."
-
-      security unlock-keychain -p ${keychain_password} ${keychain} 2> /dev/null
-      
-      _print-cmd-status
-    done
-
-    unset keychain_password
-  else
-    echo "${RED}Failed${WHITE}."
-    echo "[${RED}ERROR]${WHITE} No Password Entered."
-    return 1  
+    echo $(curl -s ${api_uri}) | jq -r '.[] | "\(.q)\n- \(.a)"' | tee -a ~/.quotes
   fi
-
-  echo ""
 }
 
-# List All Aliases And Functions Contained In ~/.bash_aliases
-function list-aliases-and-functions() {
-  shell_type=$(basename ${SHELL})
+# Get a rancom quote from the ~/.quotes file
+function get-local-quote {
+  local quote_file=~/.quotes
+  local quote_index=$(shuf -i 1-$(sed -n '$=' ${quote_file}) -n 1)
 
-  printf "\n==============\nCustom Aliases\n==============\n\n"
-  grep "^alias" ~/.${shell_type}_aliases | sort | sed 's/alias //g'
-
-  printf "\n================\nCustom Functions\n================\n\n"
-  grep "^function" ~/.${shell_type}_functions | \
-    sort | \
-    sed 's/function //g' | \
-    sed 's/\ {//g'
+  if [[ $(expr ${quote_index} % 2) -eq 0 ]]; then
+    ((quote_index--))
+  fi
   
-  printf "\n"
-}
-
-# Cache SSH and GPG Keys As Well As A Token Used For Jira API Calls
-function setup-cache {
-  keychain-unlock
-
-  cache-all-keys
-
-  keychain-lock
+  sed -n "${quote_index}p;$((quote_index + 1))p" ${quote_file} | fold -sw $(echo -n ${PS1} | wc -m)
 }
 
 # Automate The Daily Update Tasks
 function setup-env {
-  setup-cache
+  cache-all-keys
 
   brew-update
   
