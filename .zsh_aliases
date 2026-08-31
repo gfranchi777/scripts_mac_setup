@@ -1,3 +1,4 @@
+alias cat='bat'
 alias cls='clear'
 alias ex='exit'
 alias finder='open /System/Library/CoreServices/Finder.app'

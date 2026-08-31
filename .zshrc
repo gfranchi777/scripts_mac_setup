@@ -30,8 +30,4 @@ if [[ $(cat ${LAST_SETUP_ENV}) != $(date +%Y-%m-%d) ]]; then
   fi
 fi
 
-cls
-
-# Get a random quote from the ~/.quotes file
-# and display it to the terminal
-get-online-quote
+clear
